@@ -45,7 +45,6 @@ export default function DashboardPage() {
       await loadChatbots();
     };
     init();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadChatbots = async () => {
@@ -115,7 +114,7 @@ export default function DashboardPage() {
             </span>
             <button
               onClick={handleSignOut}
-              className="rounded-full border border-neutral-300 px-4 py-1.5 text-sm font-medium text-neutral-600 transition-colors hover:border-neutral-400 hover:text-neutral-800 cursor-pointer"
+              className="rounded-xl border border-neutral-300 px-4 py-1.5 text-sm font-medium text-neutral-600 transition-colors hover:border-neutral-400 hover:text-neutral-800 cursor-pointer"
             >
               Sign out
             </button>
@@ -178,7 +177,7 @@ export default function DashboardPage() {
           </div>
         ) : chatbots.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-neutral-200 px-6 py-20 transition-colors hover:border-neutral-300">
-            <div className="mb-4 text-5xl">🤖</div>
+            <img className="w-20 h-20" src="https://imgs.search.brave.com/m5eGgGA0s9nYv92C_i3C10aJjiU0HTk_gYxlhfvgLq0/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly90My5m/dGNkbi5uZXQvanBn/LzA1LzgzLzc0LzI4/LzM2MF9GXzU4Mzc0/Mjg4OF9MMGRJaTVk/MjNxSjJydGVTbFhN/ZU1ER05zbkx4Ymtq/Qi5qcGc" alt="chatbot" />
             <h3 className="mb-1 text-lg font-bold text-neutral-800">
               No chatbots yet
             </h3>

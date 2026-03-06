@@ -9,6 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@langchain/openai": "^1.2.12",
+    "@langchain/textsplitters": "^1.0.1",
     "@radix-ui/react-label": "^2.1.8",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.98.0",
@@ -20,6 +22,7 @@
     "motion": "^12.34.3",
     "next": "16.1.6",
     "openai": "^6.25.0",
+    "pdf-parse": "^2.4.5",
     "radix-ui": "^1.4.3",
     "react": "19.2.3",
     "react-dom": "19.2.3",
