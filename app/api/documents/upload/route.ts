@@ -1,3 +1,4 @@
+// Add Imports
 import { NextRequest, NextResponse } from "next/server";
 import { PDFParse } from "pdf-parse";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters"
@@ -5,6 +6,7 @@ import { OpenAIEmbeddings } from "@langchain/openai";
 import { createClient } from "@/lib/supabase/server";
 
 
+// function to extract text from PDF using pdf-parse
 async function extractTextFromPDF(file: File) {
     const buffer = Buffer.from(await file.arrayBuffer());
     const parser = new PDFParse({ data: buffer });
@@ -13,6 +15,8 @@ async function extractTextFromPDF(file: File) {
     return result.text;
 }
 
+
+// Initialize text splitter and embeddings
 const tokenSplitter = new RecursiveCharacterTextSplitter({
     chunkSize: 500,
     chunkOverlap: 100,
@@ -29,6 +33,9 @@ export async function POST(req: NextRequest) {
     const supabase = await createClient();
     let documentId: string | null = null;
     try {
+
+
+        // Authenticate user and validate input
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -48,6 +55,8 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Document with the same name already exists for this chatbot" }, { status: 400 });
         }
 
+
+        // Create a new document record in the database with status "uploading"
         const { data: documentData, error } = await supabase.from('documents').insert({
             chatbot_id: chatbotId,
             file_name: file.name,
@@ -58,19 +67,29 @@ export async function POST(req: NextRequest) {
 
         documentId = documentData.id;
 
+
+        // Update document status to "processing"
         const { error: setProcessingError } = await supabase.from("documents").update({ status: "processing" }).eq("id", documentData.id);
         if (setProcessingError) throw setProcessingError;
 
+
+        // Extract text from the PDF
         const text = await extractTextFromPDF(file);
 
+
+        // Split the extracted text into chunks
         const tokenChunks = (await tokenSplitter.splitText(text)).filter(chunk => chunk.trim().length > 10);
         if(tokenChunks.length > 1000) {
             throw new Error("Document is too large to process (exceeds 1000 chunks)");
         }
 
+
+        // set document status to "embedding" before starting the embedding process
         const { error: setEmbeddingError } = await supabase.from("documents").update({ status: "embedding" }).eq("id", documentData.id);
         if (setEmbeddingError) throw setEmbeddingError;
 
+
+        // Generate embeddings for each chunk and store them in the database, processing in batches of 50 to optimize performance
         for (let i = 0; i < tokenChunks.length; i += 50) {
             const chunkBatch = tokenChunks.slice(i, i + 50);
             const batchEmbeddings = await embeddings.embedDocuments(chunkBatch);
@@ -94,6 +113,8 @@ export async function POST(req: NextRequest) {
             if (chunkError) throw chunkError;
         }
 
+
+        // After successful embedding, update document status to "completed"
         const { error: setCompletedError } = await supabase.from('documents').update({ status: "completed" }).eq('id', documentData.id);
         if (setCompletedError) throw setCompletedError;
 

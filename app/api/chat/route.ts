@@ -1,10 +1,12 @@
+// Import necessary modules and initialize clients
 import { createClient } from "@/lib/supabase/server";
 import { OpenAIEmbeddings } from "@langchain/openai";
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+// Initialize OpenAI client and embeddings
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY!, })
 
 const embeddings = new OpenAIEmbeddings({
     modelName: "text-embedding-3-small",
@@ -14,6 +16,9 @@ const embeddings = new OpenAIEmbeddings({
 export async function POST(req: NextRequest) {
     const supabase = await createClient();
     try {
+
+
+        // Extract and validate input parameters
         const { chatbot_id, message, session_id } = await req.json()
 
         if (!chatbot_id || !message || !session_id) return NextResponse.json({ error: "Missing chatbot_id, message, or session_id" }, { status: 400 })
@@ -22,7 +27,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Message exceeds maximum length of 400 characters" }, { status: 400 })
         }
         
-        const { data: session, error: sessionError } = await supabase.from('sessions').select('id').eq('id', session_id).eq('chatbot_id', chatbot_id).maybeSingle();
+        const { data: session, error: sessionError } = await supabase.from('sessions').select('id').eq('id', session_id).eq('chatbot_id', chatbot_id).single();
 
         if (sessionError) throw sessionError
 
@@ -34,6 +39,8 @@ export async function POST(req: NextRequest) {
 
         if (!chatbot) return NextResponse.json({ error: 'Chatbot not found' }, { status: 404 })
 
+
+        // Generate embedding for the user message and retrieve relevant document chunks
         const queryEmbedding = await embeddings.embedQuery(message)
 
         const { data: chunks, error: chunksError } = await supabase.rpc('match_document_chunks', {
@@ -46,6 +53,8 @@ export async function POST(req: NextRequest) {
 
         const context = chunks?.length ? chunks.map((chunk: any) => chunk.content).join('\n\n') : "";
 
+
+        // Retrieve recent chat history for the session
         const { data: history, error: historyError } = await supabase
             .from("messages")
             .select("role, content")
@@ -60,6 +69,8 @@ export async function POST(req: NextRequest) {
             content: msg.content,
         })) : [];
 
+
+        // Creating messages array for OpenAI completion, including system prompts, context, history, and user message
         const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
             {
                 role: 'system',
@@ -85,6 +96,8 @@ export async function POST(req: NextRequest) {
             },
         ];
 
+
+        // Generate a response from OpenAI and handle the reply
         const completion = await openai.chat.completions.create({
             model: 'gpt-4o-mini',
             messages,
@@ -92,7 +105,12 @@ export async function POST(req: NextRequest) {
 
         const reply = completion.choices?.[0]?.message?.content ?? "I'm sorry, I couldn't generate a response.";
 
+        if(!reply) {
+            return NextResponse.json({ error: "Failed to generate a response" }, { status: 500 })
+        }
 
+
+        // Store the user message and assistant reply in the database
         const { error: insertError } = await supabase.from('messages').insert([
         {
             session_id,
