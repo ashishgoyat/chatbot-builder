@@ -2,11 +2,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { OpenAIEmbeddings } from "@langchain/openai";
 import { NextRequest, NextResponse } from "next/server";
-import OpenAI from "openai";
+import { streamText, type ModelMessage } from "ai";
+import { openai } from "@ai-sdk/openai"
 
 
 // Initialize OpenAI client and embeddings
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY!, })
+// const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY!, })
 
 const embeddings = new OpenAIEmbeddings({
     modelName: "text-embedding-3-small",
@@ -22,12 +23,12 @@ export async function POST(req: NextRequest) {
         const { chatbot_id, message, session_id } = await req.json()
 
         if (!chatbot_id || !message || !session_id) return NextResponse.json({ error: "Missing chatbot_id, message, or session_id" }, { status: 400 })
-            
-        if(message.length > 400) {
+
+        if (message.trim().length > 400) {
             return NextResponse.json({ error: "Message exceeds maximum length of 400 characters" }, { status: 400 })
         }
-        
-        const { data: session, error: sessionError } = await supabase.from('sessions').select('id').eq('id', session_id).eq('chatbot_id', chatbot_id).single();
+
+        const { data: session, error: sessionError } = await supabase.from('sessions').select('id').eq('id', session_id).eq('chatbot_id', chatbot_id).maybeSingle();
 
         if (sessionError) throw sessionError
 
@@ -64,14 +65,14 @@ export async function POST(req: NextRequest) {
 
         if (historyError) throw historyError
 
-        const historyMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = history && history.length > 0 ? history.reverse().map((msg: any) => ({
+        const historyMessages: ModelMessage[] = history && history.length > 0 ? [...history].reverse().map((msg: any) => ({
             role: msg.role,
             content: msg.content,
         })) : [];
 
 
         // Creating messages array for OpenAI completion, including system prompts, context, history, and user message
-        const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+        const messages: ModelMessage[] = [
             {
                 role: 'system',
                 content: chatbot.system_prompt || `You are a helpful AI assistant called "${chatbot.name}".`
@@ -97,36 +98,29 @@ export async function POST(req: NextRequest) {
         ];
 
 
-        // Generate a response from OpenAI and handle the reply
-        const completion = await openai.chat.completions.create({
-            model: 'gpt-4o-mini',
+        // Generate a streaming response from OpenAI and save the user message and assistant response to the database once complete
+        const result = await streamText({
+            model: openai('gpt-4o-mini'),
             messages,
+
+            onFinish: async ({ text }) => {
+                const { error } = await supabase.from('messages').insert([
+                    {
+                        session_id,
+                        role: "user",
+                        content: message,
+                    },
+                    {
+                        session_id,
+                        role: "assistant",
+                        content: text,
+                    },
+                ]);
+                if (error) throw error;
+            }
         })
 
-        const reply = completion.choices?.[0]?.message?.content ?? "I'm sorry, I couldn't generate a response.";
-
-        if(!reply) {
-            return NextResponse.json({ error: "Failed to generate a response" }, { status: 500 })
-        }
-
-
-        // Store the user message and assistant reply in the database
-        const { error: insertError } = await supabase.from('messages').insert([
-        {
-            session_id,
-            role: 'user',
-            content: message,
-        },
-        {
-            session_id,
-            role: 'assistant',
-            content: reply,
-        },
-        ])
-
-        if (insertError) throw insertError
-
-        return NextResponse.json({ reply })
+        return result.toTextStreamResponse();
 
 
     } catch (err) {

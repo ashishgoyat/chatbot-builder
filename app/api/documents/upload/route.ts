@@ -42,6 +42,7 @@ export async function POST(req: NextRequest) {
         const formdata = await req.formData();
         const file = formdata.get('file') as File;
         const chatbotId = formdata.get('chatbotId') as string;
+        if(!chatbotId) return NextResponse.json({ error: "Missing chatbotId" }, { status: 400 });
 
         const { data: chatbot, error: chatbotError } = await supabase.from('chatbots').select('id').eq('id', chatbotId).eq('user_id', user.id).single();
         if (chatbotError) throw chatbotError;
@@ -125,6 +126,6 @@ export async function POST(req: NextRequest) {
             await supabase.from('documents').update({ status: "failed" }).eq('id', documentId);
         }
         console.error("Error occurred while processing the document:", err);
-        return NextResponse.json({ error: "An error occurred while processing the document" });
+        return NextResponse.json({ error: "An error occurred while processing the document" }, { status: 500 });
     }
 }
