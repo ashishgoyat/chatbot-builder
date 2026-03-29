@@ -1,17 +1,17 @@
 // Import necessary modules and initialize clients
 import { createClient } from "@/lib/supabase/server";
-import { OpenAIEmbeddings } from "@langchain/openai";
+import { CohereEmbeddings } from "@langchain/cohere"
 import { NextRequest, NextResponse } from "next/server";
 import { streamText, type ModelMessage } from "ai";
-import { openai } from "@ai-sdk/openai"
+import { createOpenRouter } from "@openrouter/ai-sdk-provider"
 
 
+const openrouter = createOpenRouter({ apiKey: process.env.OPENROUTER_API_KEY })
 // Initialize OpenAI client and embeddings
 // const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY!, })
 
-const embeddings = new OpenAIEmbeddings({
-    modelName: "text-embedding-3-small",
-})
+const embeddings = new CohereEmbeddings({ model: "embed-english-v3.0", inputType: "search_query" })
+
 
 
 export async function POST(req: NextRequest) {
@@ -22,8 +22,7 @@ export async function POST(req: NextRequest) {
         // Extract and validate input parameters
         const { chatbot_id, messages, session_id } = await req.json()
         const message = messages[messages.length - 1].parts[0].text
-        console.log(chatbot_id, message)
-        console.log(session_id)
+
         if (!chatbot_id || !message || !session_id) return NextResponse.json({ error: "Missing chatbot_id, message, or session_id" }, { status: 400 })
 
         if (message.trim().length > 400) {
@@ -33,7 +32,6 @@ export async function POST(req: NextRequest) {
         const { data: session, error: sessionError } = await supabase.from('sessions').select('id').eq('id', session_id).eq('chatbot_id', chatbot_id).maybeSingle();
 
         if (sessionError) throw sessionError
-
         if (!session) return NextResponse.json({ error: 'Session not found' }, { status: 404 })
 
         const { data: chatbot, error: chatbotError } = await supabase.from('chatbots').select('id, name, welcome_message, system_prompt').eq('id', chatbot_id).single()
@@ -102,7 +100,7 @@ export async function POST(req: NextRequest) {
 
         // Generate a streaming response from OpenAI and save the user message and assistant response to the database once complete
         const result = await streamText({
-            model: openai('gpt-4o-mini'),
+            model: openrouter('openai/gpt-4o-mini'),
             messages: promptMessages,
 
             onFinish: async ({ text }) => {
@@ -122,7 +120,7 @@ export async function POST(req: NextRequest) {
             }
         })
 
-        return result.toTextStreamResponse();
+        return result.toUIMessageStreamResponse();
 
 
     } catch (err) {

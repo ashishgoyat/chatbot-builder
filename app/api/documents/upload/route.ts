@@ -1,18 +1,18 @@
 // Add Imports
 import { NextRequest, NextResponse } from "next/server";
-import { PDFParse } from "pdf-parse";
+import { extractText } from "unpdf"
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters"
-import { OpenAIEmbeddings } from "@langchain/openai";
+import { CohereEmbeddings } from "@langchain/cohere";
 import { createClient } from "@/lib/supabase/server";
 
 
 // function to extract text from PDF using pdf-parse
 async function extractTextFromPDF(file: File) {
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const parser = new PDFParse({ data: buffer });
-    const result = await parser.getText();
-    if(!result.text.trim()) throw new Error("PDF contains no extractable text");
-    return result.text;
+    const buffer = await file.arrayBuffer()
+    const text = await extractText(new Uint8Array(buffer))
+    const fullText = text.text.join('\n')
+    if (!fullText.trim()) throw new Error("PDF contains no extractable text")
+    return fullText
 }
 
 
@@ -22,11 +22,7 @@ const tokenSplitter = new RecursiveCharacterTextSplitter({
     chunkOverlap: 100,
 });
 
-const embeddings = new OpenAIEmbeddings({
-    modelName: "text-embedding-3-small",
-})
-
-
+const embeddings = new CohereEmbeddings({ model: "embed-english-v3.0", inputType: "search_document" })
 
 
 export async function POST(req: NextRequest) {
@@ -49,6 +45,7 @@ export async function POST(req: NextRequest) {
         if (!chatbot) return NextResponse.json({ error: "Chatbot not found" }, { status: 404 });
 
         if (!file) return NextResponse.json({ error: "No file provided" }, { status: 400 });
+
         if (file.type !== 'application/pdf' || file.size > 10 * 1024 * 1024) return NextResponse.json({ error: "only PDF files below 10MB are allowed" }, { status: 400 });
 
         const {data: existingDocument} = await supabase.from('documents').select('id').eq('file_name', file.name).eq('chatbot_id', chatbotId).maybeSingle();

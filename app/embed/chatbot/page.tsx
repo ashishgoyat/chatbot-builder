@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useChat } from "@ai-sdk/react"
 import { DefaultChatTransport } from "ai";
 
@@ -61,15 +61,16 @@ export default function EmbedChatbotPage() {
     }, [chatbotId])
 
 
-    if(!initialize || !sessionId || !chatbot) return <div>Loading...</div>
+    if (!initialize || !sessionId || !chatbot) return <div>Loading...</div>
 
     return <ChatUI sessionId={sessionId} chatbot={chatbot} chatbotId={chatbotId!} />
 
 }
 
 
-function ChatUI({sessionId, chatbot, chatbotId}: {sessionId: string, chatbot: Chatbot, chatbotId: string}) {
+function ChatUI({ sessionId, chatbot, chatbotId }: { sessionId: string, chatbot: Chatbot, chatbotId: string }) {
     const [input, setInput] = useState("");
+    const chatEndRef = useRef<HTMLDivElement>(null)
 
     const { messages, sendMessage, status } = useChat({
         transport: new DefaultChatTransport({
@@ -81,26 +82,84 @@ function ChatUI({sessionId, chatbot, chatbotId}: {sessionId: string, chatbot: Ch
         })
     })
 
+    useEffect(() => {
+        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }, [messages, status])
+
+
     return (
         <div className="flex flex-col h-screen">
-            <div className="flex-1 overflow-auto">
-                {messages.map((msg) => (
-                    <div key={msg.id}>
-                        {msg.parts.map((part, i) => part.type === 'text' ? <span key={i}>{part.text}</span> : null)}
+            <div className="flex flex-col h-full overflow-hidden border border-neutral-200">
+                {/* Chat header */}
+                <div className="flex items-center gap-3 border-b border-neutral-200 bg-neutral-50 px-5 py-3">
+                    <div
+                        className="flex h-9 w-9 items-center justify-center rounded-full"
+                        style={{ backgroundColor: chatbot.color + '15', border: `1px solid ${chatbot.color}30` }}
+                    >
+                        <div
+                            className="h-3 w-3 rounded-full"
+                            style={{ backgroundColor: chatbot.color }}
+                        />
                     </div>
-                ))}
-            </div>
+                    <div>
+                        <div className="text-sm font-semibold text-neutral-800">{chatbot.name}</div>
+                        <div className="flex items-center gap-1 text-xs text-emerald-600">
+                            <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Online
+                        </div>
+                    </div>
+                </div>
 
-            <div className="flex gap-2">
-                <input
-                    placeholder="Ask something..."
-                    className="flex-1 border p-2"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                />
-                <button className="cursor-pointer" onClick={() => {sendMessage({text: input}); setInput('')}}>
-                    Send
-                </button>
+                {/* Messages */}
+                <div className="flex flex-1 flex-col gap-3 overflow-y-auto bg-white p-5">
+                    {/* Welcome message */}
+                    <div className="max-w-[75%] self-start rounded-2xl rounded-bl-sm border border-neutral-200 bg-neutral-50 px-4 py-2.5 text-sm text-neutral-700">
+                        {chatbot.welcome_message}
+                    </div>
+
+                    {messages.map((msg, i) => (
+                        <div
+                            key={i}
+                            className={
+                                msg.role === 'user'
+                                    ? 'max-w-[75%] self-end rounded-2xl rounded-br-sm px-4 py-2.5 text-sm text-white'
+                                    : 'max-w-[75%] self-start rounded-2xl rounded-bl-sm border border-neutral-200 bg-neutral-50 px-4 py-2.5 text-sm text-neutral-700'
+                            }
+                            style={msg.role === 'user' ? { background: `linear-gradient(135deg, ${chatbot.color}, #3b82f6)` } : undefined}
+                        >
+                            {msg.parts.map((part, j) =>
+                                part.type === 'text' ? <span key={j}>{part.text}</span> : null
+                            )}
+                        </div>
+                    ))}
+                    {status === 'streaming' && (
+                        <div className="flex max-w-[75%] items-center gap-1 self-start rounded-2xl rounded-bl-sm border border-neutral-200 bg-neutral-50 px-4 py-3">
+                            <span className="inline-block h-1.5 w-1.5 animate-bounce rounded-full bg-neutral-400" style={{ animationDelay: '0ms' }} />
+                            <span className="inline-block h-1.5 w-1.5 animate-bounce rounded-full bg-neutral-400" style={{ animationDelay: '150ms' }} />
+                            <span className="inline-block h-1.5 w-1.5 animate-bounce rounded-full bg-neutral-400" style={{ animationDelay: '300ms' }} />
+                        </div>
+                    )}
+                    <div ref={chatEndRef} />
+                </div>
+
+                {/* Chat input */}
+                <div className="flex gap-2 border-t border-neutral-200 bg-neutral-50 p-4">
+                    <input
+                        type="text"
+                        value={input}
+                        onChange={e => setInput(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter') { sendMessage({ text: input }); setInput('') } }}
+                        placeholder="Ask something..."
+                        className="flex-1 rounded-xl border border-neutral-300 bg-white px-4 py-2.5 text-sm text-neutral-800 placeholder-neutral-400 outline-none transition-colors focus:border-neutral-500 focus:ring-1 focus:ring-neutral-400"
+                    />
+                    <button
+                        onClick={() => { sendMessage({ text: input }); setInput('') }}
+                        disabled={status === 'streaming' || !input.trim()}
+                        className="cursor-pointer rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                        style={{ background: `linear-gradient(135deg, ${chatbot.color}, #3b82f6)` }}
+                    >
+                        →
+                    </button>
+                </div>
             </div>
         </div>
     )

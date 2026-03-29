@@ -25,7 +25,7 @@ export default function ChatbotDetailPage() {
     const [documents, setDocuments] = useState<Document[]>([])
     const [loading, setLoading] = useState(true)
     const [tab, setTab] = useState<Tab>('documents')
-    const [text, setText] = useState('')
+    const [file, setFile] = useState<File | null>(null)
     const [uploading, setUploading] = useState(false)
     const [uploadProgress, setUploadProgress] = useState('')
     const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -75,20 +75,23 @@ export default function ChatbotDetailPage() {
     }
 
     const uploadDocument = async () => {
-        if (!text.trim()) return
         setUploading(true)
         setUploadProgress('Generating embeddings...')
+        if(!file) return
+
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('chatbotId', id)
 
         try {
             const res = await fetch('/api/documents/upload', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ chatbotId: id, content: text.trim() }),
+                body: formData
             })
 
             if (!res.ok) throw new Error('Upload failed')
             setUploadProgress('Done!')
-            setText('')
+            setFile(null)
             await fetchDocuments()
         } catch {
             setUploadProgress('Error uploading. Try again.')
@@ -205,13 +208,7 @@ export default function ChatbotDetailPage() {
                             <p className="mb-4 text-sm text-neutral-500">
                                 Paste FAQs, product info, support docs — anything you want your bot to know.
                             </p>
-                            <textarea
-                                value={text}
-                                onChange={e => setText(e.target.value)}
-                                placeholder="e.g. Our return policy is 30 days. To initiate a return, email support@company.com with your order number..."
-                                className="w-full resize-y rounded-xl border border-neutral-300 bg-neutral-50 px-4 py-3 text-sm text-neutral-800 placeholder-neutral-400 outline-none transition-colors focus:border-neutral-500 focus:ring-1 focus:ring-neutral-400"
-                                style={{ minHeight: '200px', lineHeight: 1.6 }}
-                            />
+                            <input type='file' accept='.pdf' onChange={(e) => setFile(e.target.files?.[0] || null)} />
                             <div className="mt-4 flex items-center justify-between">
                                 {uploadProgress && (
                                     <span className={`text-sm ${uploadProgress.includes('Error') ? 'text-red-500' : 'text-emerald-600'}`}>
@@ -221,7 +218,7 @@ export default function ChatbotDetailPage() {
                                 <div className="ml-auto">
                                     <button
                                         onClick={uploadDocument}
-                                        disabled={uploading || !text.trim()}
+                                        disabled={uploading || !file}
                                         className="relative inline-flex h-10 cursor-pointer overflow-hidden rounded-full p-[1px] focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                                     >
                                         <span className="absolute inset-[-1000%] animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#E2CBFF_0%,#393BB2_50%,#E2CBFF_100%)]" />
