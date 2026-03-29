@@ -20,8 +20,10 @@ export async function POST(req: NextRequest) {
 
 
         // Extract and validate input parameters
-        const { chatbot_id, message, session_id } = await req.json()
-
+        const { chatbot_id, messages, session_id } = await req.json()
+        const message = messages[messages.length - 1].parts[0].text
+        console.log(chatbot_id, message)
+        console.log(session_id)
         if (!chatbot_id || !message || !session_id) return NextResponse.json({ error: "Missing chatbot_id, message, or session_id" }, { status: 400 })
 
         if (message.trim().length > 400) {
@@ -72,7 +74,7 @@ export async function POST(req: NextRequest) {
 
 
         // Creating messages array for OpenAI completion, including system prompts, context, history, and user message
-        const messages: ModelMessage[] = [
+        const promptMessages: ModelMessage[] = [
             {
                 role: 'system',
                 content: chatbot.system_prompt || `You are a helpful AI assistant called "${chatbot.name}".`
@@ -101,7 +103,7 @@ export async function POST(req: NextRequest) {
         // Generate a streaming response from OpenAI and save the user message and assistant response to the database once complete
         const result = await streamText({
             model: openai('gpt-4o-mini'),
-            messages,
+            messages: promptMessages,
 
             onFinish: async ({ text }) => {
                 const { error } = await supabase.from('messages').insert([
