@@ -10,6 +10,7 @@ export async function GET(req: NextRequest) {
 
         const { data, error } = await supabase.from('chatbots').select('name, color, welcome_message').eq('id', id).single()
         if (error || !data) {
+            console.log(error)
             return NextResponse.json({ error: 'Chatbot not found' }, { status: 404 })
         }
 
