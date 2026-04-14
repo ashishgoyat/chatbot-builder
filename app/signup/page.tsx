@@ -1,12 +1,11 @@
 "use client";
+
 import React, { useState } from "react";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
-import { EncryptedText } from "@/components/ui/encrypted-text";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { IconArrowLeft, IconArrowRight, IconLock, IconMail } from "@tabler/icons-react";
 
 export default function SignupForm() {
   const [email, setEmail] = useState("");
@@ -15,7 +14,6 @@ export default function SignupForm() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const supabase = createClient();
-  const router = useRouter();
 
   const handleSubmit = async () => {
     setError("");
@@ -27,109 +25,104 @@ export default function SignupForm() {
       setError("Password must be at least 6 characters.");
       return;
     }
+
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
+    const { error } = await supabase.auth.signUp({ email, password });
     setLoading(false);
+
     if (error) {
       setError(error.message);
       return;
     }
+
     setSuccess(true);
   };
 
-  if (success) {
-    return (
-      <div className="shadow-input mx-auto w-full max-w-md rounded-none bg-white p-4 md:rounded-2xl md:p-8 dark:bg-black">
-        <h2 className="text-2xl font-bold text-neutral-800 dark:text-neutral-200 text-center mt-20 mb-4">
-          Check your email
-        </h2>
-        <p className="text-center text-sm text-neutral-600 dark:text-neutral-400 mb-8">
-          We&apos;ve sent a confirmation link to <span className="font-semibold text-neutral-800 dark:text-white">{email}</span>. Click it to activate your account.
-        </p>
-        <div className="text-center">
-          <Link href="/login" className="font-semibold text-neutral-800 dark:text-white hover:underline text-sm">
-            ← Back to Login
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="shadow-input mx-auto w-full max-w-md rounded-none bg-white p-4 md:rounded-2xl md:p-8 dark:bg-black">
-      <h2 className="text-4xl font-extrabold text-neutral-800 dark:text-neutral-200 text-center my-20">
-        <EncryptedText
-          text="Start Building."
-          encryptedClassName="text-neutral-500"
-          revealedClassName="dark:text-white text-black"
-          revealDelayMs={50}
-        />
-      </h2>
-
-      <div className="my-8">
-        <LabelInputContainer className="mb-4">
-          <Label htmlFor="email">Email Address</Label>
-          <Input id="email" placeholder="projectmayhem@fc.com" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-        </LabelInputContainer>
-        <LabelInputContainer className="mb-4">
-          <Label htmlFor="password">Password</Label>
-          <Input id="password" placeholder="••••••••" type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSubmit()} />
-        </LabelInputContainer>
-
-        {error && (
-          <p className="mb-4 text-sm text-red-500 text-center">{error}</p>
-        )}
-
-        <button type="button" onClick={handleSubmit} disabled={loading} className="relative inline-flex h-12 overflow-hidden rounded-full p-[1px] focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-50 w-full disabled:opacity-50">
-          <span className="absolute inset-[-1000%] animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#E2CBFF_0%,#393BB2_50%,#E2CBFF_100%)]" />
-          <span className="inline-flex h-full w-full cursor-pointer items-center justify-center rounded-full bg-slate-950 px-3 py-1 text-sm font-medium text-white backdrop-blur-3xl">
-            {loading ? "Creating account..." : "Sign up →"}
-          </span>
-          <BottomGradient />
-        </button>
-
-        <p className="text-center text-xs text-neutral-600 dark:text-neutral-400 mt-8">
-          By signing up you agree to our Terms of Service and Privacy Policy.
-        </p>
-        <div className="my-8 h-[1px] w-full bg-gradient-to-r from-transparent via-neutral-300 to-transparent dark:via-neutral-700" />
-        <div className="flex flex-col space-y-4">
-          <p className="text-center text-sm text-neutral-600 dark:text-neutral-400">
-            Already have an account?{" "}
-            <Link
-              href="/login"
-              className="font-semibold text-neutral-800 dark:text-white hover:underline"
-            >
-              Login
+    <div className="app-shell flex min-h-screen items-center py-10">
+      <div className="mx-auto w-full max-w-3xl overflow-hidden rounded-3xl border border-white/60 bg-white/85 shadow-2xl shadow-indigo-950/10 backdrop-blur-xl section-enter">
+        {success ? (
+          <section className="p-7 sm:p-10 reveal-up">
+            <span className="chip">Account created</span>
+            <h2 className="mt-4 text-3xl font-semibold tracking-tight text-neutral-900">Check your inbox</h2>
+            <p className="mt-3 text-sm leading-relaxed text-neutral-600">
+              We sent a confirmation link to <span className="font-semibold text-neutral-800">{email}</span>. Open the
+              email and verify your account, then login to continue.
+            </p>
+            <Link href="/login" className="btn-secondary mt-7 no-underline">
+              <IconArrowLeft className="mr-2 h-4 w-4" />
+              Back to login
             </Link>
-          </p>
-        </div>
+          </section>
+        ) : (
+          <div className="grid md:grid-cols-[1.1fr_0.9fr]">
+            <section className="border-b border-neutral-200/70 bg-neutral-50/70 p-7 reveal-up md:border-b-0 md:border-r md:p-10">
+              <p className="text-xs uppercase tracking-[0.2em] text-neutral-500">Get started</p>
+              <h1 className="mt-3 text-3xl font-semibold leading-tight text-neutral-900">Create your BotForge workspace.</h1>
+              <p className="mt-4 text-sm leading-relaxed text-neutral-600">
+                Launch your first support chatbot, train it on your documents, and embed it on any website.
+              </p>
+              <div className="mt-8 space-y-3 text-sm text-neutral-700">
+                <p>1. Sign up with email</p>
+                <p>2. Create chatbot</p>
+                <p>3. Upload docs and deploy</p>
+              </div>
+            </section>
+
+            <section className="p-7 reveal-up reveal-delay-1 md:p-10">
+              <h2 className="text-2xl font-semibold tracking-tight text-neutral-900">Sign up</h2>
+              <p className="mt-2 text-sm text-neutral-600">No credit card required.</p>
+
+              <div className="mt-6 space-y-4">
+                <div>
+                  <Label htmlFor="email" className="mb-1.5 inline-block">Email</Label>
+                  <div className="relative">
+                    <IconMail className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-neutral-400" />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="you@company.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="input-polish pl-10"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="password" className="mb-1.5 inline-block">Password</Label>
+                  <div className="relative">
+                    <IconLock className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-neutral-400" />
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="Minimum 6 characters"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+                      className="input-polish pl-10"
+                    />
+                  </div>
+                </div>
+
+                {error ? <p className="text-sm text-red-600">{error}</p> : null}
+
+                <button type="button" onClick={handleSubmit} disabled={loading} className="btn-primary mt-2 w-full disabled:opacity-60">
+                  {loading ? "Creating account..." : "Create account"}
+                  <IconArrowRight className="ml-2 h-4 w-4" />
+                </button>
+              </div>
+
+              <p className="mt-6 text-sm text-neutral-600">
+                Already have an account?{" "}
+                <Link href="/login" className="font-semibold text-neutral-900 hover:text-indigo-700">
+                  Login
+                </Link>
+              </p>
+            </section>
+          </div>
+        )}
       </div>
     </div>
   );
 }
-
-const BottomGradient = () => {
-  return (
-    <>
-      <span className="absolute inset-x-0 -bottom-px block h-px w-full bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-0 transition duration-500 group-hover/btn:opacity-100" />
-      <span className="absolute inset-x-10 -bottom-px mx-auto block h-px w-1/2 bg-gradient-to-r from-transparent via-indigo-500 to-transparent opacity-0 blur-sm transition duration-500 group-hover/btn:opacity-100" />
-    </>
-  );
-};
-
-const LabelInputContainer = ({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) => {
-  return (
-    <div className={cn("flex w-full flex-col space-y-2", className)}>
-      {children}
-    </div>
-  );
-};

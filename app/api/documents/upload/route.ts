@@ -22,13 +22,22 @@ const tokenSplitter = new RecursiveCharacterTextSplitter({
     chunkOverlap: 100,
 });
 
-const embeddings = new CohereEmbeddings({ model: "embed-english-v3.0", inputType: "search_document" })
-
 
 export async function POST(req: NextRequest) {
     const supabase = await createClient();
     let documentId: string | null = null;
     try {
+        if (!process.env.COHERE_API_KEY) {
+            return NextResponse.json(
+                { error: "Server misconfiguration: COHERE_API_KEY is missing" },
+                { status: 500 }
+            );
+        }
+
+        const embeddings = new CohereEmbeddings({
+            model: "embed-english-v3.0",
+            inputType: "search_document",
+        });
 
 
         // Authenticate user and validate input

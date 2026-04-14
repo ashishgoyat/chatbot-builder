@@ -1,10 +1,10 @@
 "use client";
-import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
+
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { cn } from "@/lib/utils";
-import { EncryptedText } from "@/components/ui/encrypted-text";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import { IconArrowRight, IconLogout, IconMessageCirclePlus, IconRobot, IconTrash } from "@tabler/icons-react";
 
 type Chatbot = {
   id: string;
@@ -15,20 +15,29 @@ type Chatbot = {
 };
 
 const COLORS = [
-  "#6366f1", "#8b5cf6", "#ec4899", "#f43f5e", "#f97316",
-  "#eab308", "#22c55e", "#06b6d4", "#3b82f6", "#64748b",
+  "#4f46e5",
+  "#0ea5e9",
+  "#14b8a6",
+  "#22c55e",
+  "#f59e0b",
+  "#ef4444",
+  "#ec4899",
+  "#8b5cf6",
+  "#334155",
+  "#64748b",
 ];
 
 export default function DashboardPage() {
   const [chatbots, setChatbots] = useState<Chatbot[]>([]);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<{ email?: string | null } | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [newName, setNewName] = useState("");
   const [newWelcome, setNewWelcome] = useState("Hi! How can I help you?");
-  const [newColor, setNewColor] = useState("#6366f1");
+  const [newColor, setNewColor] = useState("#4f46e5");
   const [creating, setCreating] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
   const router = useRouter();
   const supabase = createClient();
 
@@ -37,46 +46,51 @@ export default function DashboardPage() {
       const {
         data: { user },
       } = await supabase.auth.getUser();
+
       if (!user) {
         router.push("/login");
         return;
       }
+
       setUser(user);
       await loadChatbots();
     };
+
     init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadChatbots = async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from("chatbots")
-      .select("*")
-      .order("created_at", { ascending: false });
+    const { data } = await supabase.from("chatbots").select("*").order("created_at", { ascending: false });
     setChatbots(data || []);
     setLoading(false);
   };
 
   const createChatbot = async () => {
     if (!newName.trim()) return;
+
     setCreating(true);
     const {
       data: { user },
     } = await supabase.auth.getUser();
+
     const { error } = await supabase.from("chatbots").insert({
       name: newName.trim(),
       welcome_message: newWelcome,
       color: newColor,
       user_id: user?.id,
     });
+
     if (error) {
       console.error("Error creating chatbot:", error);
       setCreating(false);
       return;
     }
+
     setNewName("");
     setNewWelcome("Hi! How can I help you?");
-    setNewColor("#6366f1");
+    setNewColor("#4f46e5");
     setCreating(false);
     setShowModal(false);
     await loadChatbots();
@@ -95,287 +109,189 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Navbar */}
-      <nav className="sticky top-0 z-40 border-b border-neutral-200 bg-white/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <Link href="/" className="flex items-center gap-2 text-sm font-normal text-black no-underline">
-            <img
-              src="https://assets.aceternity.com/logo-dark.png"
-              alt="logo"
-              width={30}
-              height={30}
-            />
-            <span className="font-medium text-black">BotForge</span>
-          </Link>
-          <div className="flex items-center gap-4">
-            <span className="hidden text-sm text-neutral-500 sm:inline">
+    <div className="min-h-screen pb-10">
+      <header className="app-shell pt-6 nav-enter">
+        <div className="glass-panel flex items-center justify-between px-5 py-3 sm:px-6">
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-neutral-500">Workspace</p>
+            <h1 className="text-xl font-semibold text-neutral-900">BotForge Dashboard</h1>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <span className="hidden rounded-full border border-neutral-200 bg-white px-3 py-1 text-xs text-neutral-600 sm:inline">
               {user?.email}
             </span>
-            <button
-              onClick={handleSignOut}
-              className="rounded-xl border border-neutral-300 px-4 py-1.5 text-sm font-medium text-neutral-600 transition-colors hover:border-neutral-400 hover:text-neutral-800 cursor-pointer"
-            >
+            <button onClick={handleSignOut} className="btn-secondary">
+              <IconLogout className="mr-2 h-4 w-4" />
               Sign out
             </button>
           </div>
         </div>
-      </nav>
+      </header>
 
-      {/* Main */}
-      <main className="mx-auto max-w-5xl px-6 py-12">
-        {/* Header */}
-        <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-neutral-800 sm:text-4xl">
-              <EncryptedText
-                text="Your Chatbots"
-                encryptedClassName="text-neutral-400"
-                revealedClassName="text-black"
-                revealDelayMs={40}
-              />
-            </h1>
-            <p className="mt-2 text-base text-neutral-500">
-              Build, train and deploy AI chatbots on any website.
-            </p>
-          </div>
-          <button
-            onClick={() => setShowModal(true)}
-            className="relative inline-flex h-11 overflow-hidden rounded-full p-[1px] focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-50 cursor-pointer"
-          >
-            <span className="absolute inset-[-1000%] animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#E2CBFF_0%,#393BB2_50%,#E2CBFF_100%)]" />
-            <span className="inline-flex h-full w-full items-center justify-center gap-1.5 rounded-full bg-slate-950 px-5 py-1 text-sm font-medium text-white backdrop-blur-3xl">
-              <span className="text-base leading-none">+</span> New Chatbot
-            </span>
-          </button>
-        </div>
+      <main className="app-shell mt-8">
+        <section className="glass-panel hero-mesh section-enter relative overflow-hidden p-6 sm:p-8">
+          <div className="float-orb pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full bg-indigo-300/15 blur-3xl" />
+          <div className="float-orb-slow pointer-events-none absolute -left-12 bottom-0 h-40 w-40 rounded-full bg-sky-300/12 blur-3xl" />
 
-        {/* Stats */}
-        {!loading && chatbots.length > 0 && (
-          <div className="mb-8 flex gap-4">
-            <div className="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-neutral-50 px-5 py-3">
-              <span className="text-xl">🤖</span>
-              <div>
-                <div className="text-lg font-bold text-neutral-800">
-                  {chatbots.length}
-                </div>
-                <div className="text-xs text-neutral-500">Total Chatbots</div>
-              </div>
+          <div className="relative z-10 mb-8 flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p className="editorial-kicker">Control Center</p>
+              <h2 className="mt-2 text-3xl font-semibold tracking-tight text-neutral-900">Your chatbots</h2>
+              <p className="mt-2 text-sm text-neutral-600">Create, train, and deploy customer-facing AI assistants.</p>
             </div>
-          </div>
-        )}
 
-        {/* Content */}
-        {loading ? (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="h-48 animate-pulse rounded-2xl border border-neutral-200 bg-neutral-100"
-              />
-            ))}
-          </div>
-        ) : chatbots.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-neutral-200 px-6 py-20 transition-colors hover:border-neutral-300">
-            <img className="w-20 h-20" src="https://imgs.search.brave.com/m5eGgGA0s9nYv92C_i3C10aJjiU0HTk_gYxlhfvgLq0/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly90My5m/dGNkbi5uZXQvanBn/LzA1LzgzLzc0LzI4/LzM2MF9GXzU4Mzc0/Mjg4OF9MMGRJaTVk/MjNxSjJydGVTbFhN/ZU1ER05zbkx4Ymtq/Qi5qcGc" alt="chatbot" />
-            <h3 className="mb-1 text-lg font-bold text-neutral-800">
-              No chatbots yet
-            </h3>
-            <p className="mb-6 max-w-sm text-center text-sm text-neutral-500">
-              Create your first AI chatbot and deploy it on any website in
-              minutes.
-            </p>
-            <button
-              onClick={() => setShowModal(true)}
-              className="relative inline-flex h-10 overflow-hidden rounded-full p-[1px] focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-50 cursor-pointer"
-            >
-              <span className="absolute inset-[-1000%] animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#E2CBFF_0%,#393BB2_50%,#E2CBFF_100%)]" />
-              <span className="inline-flex h-full w-full items-center justify-center rounded-full bg-slate-950 px-5 py-1 text-sm font-medium text-white backdrop-blur-3xl">
-                + Create your first chatbot
-              </span>
+            <button onClick={() => setShowModal(true)} className="btn-primary">
+              <IconMessageCirclePlus className="mr-2 h-4 w-4" />
+              New chatbot
             </button>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {chatbots.map((bot) => (
-              <div
-                key={bot.id}
-                className="group relative rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm transition-all duration-200 hover:border-neutral-300 hover:shadow-md"
-              >
-                {/* Color accent */}
-                <div
-                  className="absolute inset-x-0 top-0 h-1 rounded-t-2xl"
-                  style={{ backgroundColor: bot.color }}
-                />
 
-                {/* Header */}
-                <div className="mt-1 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="flex h-10 w-10 items-center justify-center rounded-xl text-base font-bold"
-                      style={{
-                        backgroundColor: bot.color + "15",
-                        color: bot.color,
-                      }}
-                    >
-                      {bot.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <div className="font-semibold text-neutral-800">
-                        {bot.name}
+          {!loading && chatbots.length > 0 ? (
+            <div className="relative z-10 mb-6 grid gap-3 sm:grid-cols-3">
+              <div className="soft-card reveal-up p-4">
+                <p className="text-xs uppercase tracking-wide text-neutral-500">Total</p>
+                <p className="mt-1 text-2xl font-semibold text-neutral-900">{chatbots.length}</p>
+              </div>
+            </div>
+          ) : null}
+
+          {loading ? (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {[1, 2, 3].map((item) => (
+                <div key={item} className="h-44 animate-pulse rounded-2xl border border-neutral-200 bg-white/80" />
+              ))}
+            </div>
+          ) : chatbots.length === 0 ? (
+            <div className="rounded-3xl border-2 border-dashed border-neutral-300 bg-white/70 px-6 py-14 text-center">
+              <IconRobot className="mx-auto mb-4 h-10 w-10 text-neutral-400" />
+              <h3 className="text-lg font-semibold text-neutral-900">No chatbots yet</h3>
+              <p className="mx-auto mt-2 max-w-md text-sm text-neutral-600">
+                Create your first chatbot and start answering customer questions from your own documents.
+              </p>
+              <button onClick={() => setShowModal(true)} className="btn-primary mt-6">
+                Create first chatbot
+              </button>
+            </div>
+          ) : (
+            <div className="relative z-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {chatbots.map((bot, index) => (
+                <article
+                  key={bot.id}
+                  className="soft-card p-5"
+                  style={{ animationDelay: `${index * 55}ms`, animation: "revealUp 420ms var(--ease-out) both" }}
+                >
+                  <div
+                    className="mb-4 h-1.5 w-full rounded-full"
+                    style={{ background: `linear-gradient(90deg, ${bot.color}, #38bdf8)` }}
+                  />
+
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-semibold"
+                        style={{ backgroundColor: `${bot.color}1A`, color: bot.color }}
+                      >
+                        {bot.name.charAt(0).toUpperCase()}
                       </div>
-                      <div className="text-xs text-neutral-400">
-                        {new Date(bot.created_at).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })}
+                      <div className="min-w-0">
+                        <h3 className="truncate text-base font-semibold text-neutral-900">{bot.name}</h3>
+                        <p className="text-xs text-neutral-500">
+                          {new Date(bot.created_at).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                        </p>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Welcome message */}
-                <p
-                  className="mt-3 rounded-lg border-l-[3px] bg-neutral-50 px-3 py-2 text-xs leading-relaxed text-neutral-500"
-                  style={{ borderLeftColor: bot.color }}
-                >
-                  &ldquo;{bot.welcome_message}&rdquo;
-                </p>
+                  <p className="mt-4 line-clamp-3 rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-600">
+                    {bot.welcome_message}
+                  </p>
 
-                {/* Actions */}
-                <div className="mt-4 flex gap-2">
-                  <Link
-                    href={`/dashboard/${bot.id}`}
-                    className="flex-1 no-underline"
-                  >
+                  <div className="mt-5 flex items-center gap-2">
+                    <Link href={`/dashboard/${bot.id}`} className="flex-1 no-underline">
+                      <span className="btn-primary w-full">
+                        Manage
+                        <IconArrowRight className="ml-2 h-4 w-4" />
+                      </span>
+                    </Link>
+
                     <button
-                      className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs font-medium text-neutral-600 transition-all hover:border-neutral-400 hover:text-neutral-800 cursor-pointer"
+                      onClick={() => deleteChatbot(bot.id)}
+                      disabled={deletingId === bot.id}
+                      className="btn-secondary px-3"
+                      aria-label="Delete chatbot"
                     >
-                      Manage →
+                      {deletingId === bot.id ? "..." : <IconTrash className="h-4 w-4" />}
                     </button>
-                  </Link>
-                  <button
-                    onClick={() => deleteChatbot(bot.id)}
-                    disabled={deletingId === bot.id}
-                    className="rounded-lg border border-neutral-200 px-3 py-2 text-xs text-neutral-400 transition-all hover:border-red-300 hover:bg-red-50 hover:text-red-500 disabled:opacity-50 cursor-pointer"
-                  >
-                    {deletingId === bot.id ? "..." : "🗑"}
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
       </main>
 
-      {/* Create Modal */}
-      {showModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
-          onClick={(e) =>
-            e.target === e.currentTarget && setShowModal(false)
-          }
-        >
-          <div className="shadow-input w-full max-w-md rounded-2xl bg-white p-6 md:p-8">
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-xl font-extrabold text-neutral-800">
-                New Chatbot
-              </h2>
-              <button
-                onClick={() => setShowModal(false)}
-                className="text-lg text-neutral-400 hover:text-neutral-600 cursor-pointer"
-              >
-                ×
-              </button>
-            </div>
+      {showModal ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/35 p-4 backdrop-blur-sm" onClick={(e) => e.target === e.currentTarget && setShowModal(false)}>
+          <div className="w-full max-w-md rounded-3xl border border-white/50 bg-white p-6 shadow-2xl shadow-indigo-950/20 sm:p-7 section-enter">
+            <h2 className="text-xl font-semibold text-neutral-900">Create chatbot</h2>
+            <p className="mt-1 text-sm text-neutral-600">Set up the basics now. You can customize later.</p>
 
-            <div className="space-y-5">
-              <LabelInputContainer>
-                <label className="mb-1 block text-sm font-medium text-neutral-700">
-                  Chatbot Name
-                </label>
+            <div className="mt-6 space-y-4">
+              <div>
+                <label className="mb-1.5 inline-block text-sm font-medium text-neutral-700">Name</label>
                 <input
                   type="text"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && createChatbot()}
-                  placeholder="e.g. Support Bot, Sales Assistant..."
-                  className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-4 py-2.5 text-sm text-neutral-800 placeholder-neutral-400 outline-none transition-colors focus:border-neutral-500 focus:ring-1 focus:ring-neutral-400"
+                  placeholder="Support assistant"
+                  className="input-polish"
                   autoFocus
                 />
-              </LabelInputContainer>
+              </div>
 
-              <LabelInputContainer>
-                <label className="mb-1 block text-sm font-medium text-neutral-700">
-                  Welcome Message
-                </label>
+              <div>
+                <label className="mb-1.5 inline-block text-sm font-medium text-neutral-700">Welcome message</label>
                 <input
                   type="text"
                   value={newWelcome}
                   onChange={(e) => setNewWelcome(e.target.value)}
                   placeholder="Hi! How can I help you?"
-                  className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-4 py-2.5 text-sm text-neutral-800 placeholder-neutral-400 outline-none transition-colors focus:border-neutral-500 focus:ring-1 focus:ring-neutral-400"
+                  className="input-polish"
                 />
-              </LabelInputContainer>
+              </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-neutral-700">
-                  Accent Color
-                </label>
+                <label className="mb-2 inline-block text-sm font-medium text-neutral-700">Accent color</label>
                 <div className="flex flex-wrap gap-2">
-                  {COLORS.map((c) => (
+                  {COLORS.map((color) => (
                     <button
-                      key={c}
-                      onClick={() => setNewColor(c)}
-                      className="h-7 w-7 rounded-full border-2 transition-all cursor-pointer hover:scale-110"
-                      style={{
-                        backgroundColor: c,
-                        borderColor: newColor === c ? "#1e293b" : "transparent",
-                      }}
+                      key={color}
+                      onClick={() => setNewColor(color)}
+                      className="h-8 w-8 rounded-full border-2 transition-transform duration-150 ease-out hover:scale-110 active:scale-95"
+                      style={{ backgroundColor: color, borderColor: newColor === color ? "#0f172a" : "transparent" }}
+                      aria-label={`Choose color ${color}`}
                     />
                   ))}
                 </div>
               </div>
             </div>
 
-            <div className="mt-6 h-[1px] w-full bg-gradient-to-r from-transparent via-neutral-300 to-transparent" />
-
-            <div className="mt-6 flex items-center justify-end gap-3">
-              <button
-                onClick={() => setShowModal(false)}
-                className="rounded-full border border-neutral-300 px-5 py-2 text-sm font-medium text-neutral-500 transition-colors hover:text-neutral-700 cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={createChatbot}
-                disabled={!newName.trim() || creating}
-                className="relative inline-flex h-10 overflow-hidden rounded-full p-[1px] focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-50 disabled:opacity-50 cursor-pointer"
-              >
-                <span className="absolute inset-[-1000%] animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#E2CBFF_0%,#393BB2_50%,#E2CBFF_100%)]" />
-                <span className="inline-flex h-full w-full items-center justify-center rounded-full bg-slate-950 px-5 py-1 text-sm font-medium text-white backdrop-blur-3xl">
-                  {creating ? "Creating..." : "Create Chatbot →"}
-                </span>
+            <div className="mt-7 flex justify-end gap-2">
+              <button onClick={() => setShowModal(false)} className="btn-secondary">Cancel</button>
+              <button onClick={createChatbot} disabled={!newName.trim() || creating} className="btn-primary disabled:opacity-60">
+                {creating ? "Creating..." : "Create chatbot"}
               </button>
             </div>
           </div>
         </div>
-      )}
+      ) : null}
+
     </div>
   );
 }
-
-const LabelInputContainer = ({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) => {
-  return (
-    <div className={cn("flex w-full flex-col space-y-2", className)}>
-      {children}
-    </div>
-  );
-};

@@ -1,12 +1,12 @@
 "use client";
+
 import React, { useState } from "react";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
-import { EncryptedText } from "@/components/ui/encrypted-text";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { IconArrowRight, IconLock, IconMail } from "@tabler/icons-react";
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
@@ -22,88 +22,91 @@ export default function LoginForm() {
       setError("Please fill in all fields.");
       return;
     }
+
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
+
     if (error) {
       setError(error.message);
       return;
     }
+
     router.push("/dashboard");
   };
+
   return (
-    <div className="shadow-input mx-auto w-full max-w-md rounded-none bg-white p-4 md:rounded-2xl md:p-8 dark:bg-black">
-      <h2 className="text-4xl font-extrabold text-neutral-800 dark:text-neutral-200 text-center my-20">
-        <EncryptedText
-          text="Login here."
-          encryptedClassName="text-neutral-500"
-          revealedClassName="dark:text-white text-black"
-          revealDelayMs={50}
-        />
-      </h2>
+    <div className="app-shell flex min-h-screen items-center py-10">
+      <div className="mx-auto grid w-full max-w-4xl overflow-hidden rounded-3xl border border-white/50 bg-white/80 shadow-2xl shadow-indigo-950/10 backdrop-blur-xl section-enter md:grid-cols-2">
+        <section className="relative hidden border-r border-neutral-200/60 bg-gradient-to-br from-indigo-600 to-sky-600 p-8 text-white md:block">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.24),transparent_45%)]" />
+          <div className="relative z-10 flex h-full flex-col justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-indigo-100">Welcome back</p>
+              <h1 className="mt-4 text-3xl font-semibold leading-tight">Manage your chatbot workspace with confidence.</h1>
+              <p className="mt-4 text-sm text-indigo-100/90">
+                Access your bots, monitor training data, and keep your embedded support assistant updated.
+              </p>
+            </div>
+            <p className="text-xs text-indigo-100/80">BotForge dashboard</p>
+          </div>
+        </section>
 
-      <div className="my-8">
-        <LabelInputContainer className="mb-4">
-          <Label htmlFor="email">Email Address</Label>
-          <Input id="email" placeholder="projectmayhem@fc.com" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-        </LabelInputContainer>
-        <LabelInputContainer className="mb-4">
-          <Label htmlFor="password">Password</Label>
-          <Input id="password" placeholder="••••••••" type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSubmit()} />
-        </LabelInputContainer>
+        <section className="p-6 sm:p-8">
+          <div className="mb-8 reveal-up">
+            <p className="text-xs uppercase tracking-[0.2em] text-neutral-500">Account</p>
+            <h2 className="mt-2 text-3xl font-semibold tracking-tight text-neutral-900">Login</h2>
+            <p className="mt-2 text-sm text-neutral-600">Continue building your AI assistant.</p>
+          </div>
 
-        {error && (
-          <p className="mb-4 text-sm text-red-500 text-center">{error}</p>
-        )}
+          <div className="space-y-4 reveal-up reveal-delay-1">
+            <div>
+              <Label htmlFor="email" className="mb-1.5 inline-block">Email</Label>
+              <div className="relative">
+                <IconMail className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-neutral-400" />
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="you@company.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="input-polish pl-10"
+                />
+              </div>
+            </div>
 
-        <button type="button" onClick={handleSubmit} disabled={loading} className="relative inline-flex h-12 overflow-hidden rounded-full p-[1px] focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-50 w-full disabled:opacity-50">
-          <span className="absolute inset-[-1000%] animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#E2CBFF_0%,#393BB2_50%,#E2CBFF_100%)]" />
-          <span className="inline-flex h-full w-full cursor-pointer items-center justify-center rounded-full bg-slate-950 px-3 py-1 text-sm font-medium text-white backdrop-blur-3xl">
-            {loading ? "Logging in..." : "Login →"}
-          </span>
-          <BottomGradient />
-        </button>
+            <div>
+              <Label htmlFor="password" className="mb-1.5 inline-block">Password</Label>
+              <div className="relative">
+                <IconLock className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-neutral-400" />
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Enter password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+                  className="input-polish pl-10"
+                />
+              </div>
+            </div>
 
-        <div className="my-8 h-[1px] w-full bg-gradient-to-r from-transparent via-neutral-300 to-transparent dark:via-neutral-700" />
+            {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
-        <div className="flex flex-col space-y-4">
-          <p className="text-center text-sm text-neutral-600 dark:text-neutral-400">
-            Don't have an account?{" "}
-            <Link
-              href="/signup"
-              className="font-semibold text-neutral-800 dark:text-white hover:underline"
-            >
-              Sign up
+            <button type="button" onClick={handleSubmit} disabled={loading} className="btn-primary mt-2 w-full disabled:opacity-60">
+              {loading ? "Logging in..." : "Login"}
+              <IconArrowRight className="ml-2 h-4 w-4" />
+            </button>
+          </div>
+
+          <p className="mt-6 text-sm text-neutral-600">
+            New here?{" "}
+            <Link href="/signup" className="font-semibold text-neutral-900 hover:text-indigo-700">
+              Create an account
             </Link>
           </p>
-        </div>
+        </section>
       </div>
     </div>
   );
 }
-
-const BottomGradient = () => {
-  return (
-    <>
-      <span className="absolute inset-x-0 -bottom-px block h-px w-full bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-0 transition duration-500 group-hover/btn:opacity-100" />
-      <span className="absolute inset-x-10 -bottom-px mx-auto block h-px w-1/2 bg-gradient-to-r from-transparent via-indigo-500 to-transparent opacity-0 blur-sm transition duration-500 group-hover/btn:opacity-100" />
-    </>
-  );
-};
-
-const LabelInputContainer = ({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) => {
-  return (
-    <div className={cn("flex w-full flex-col space-y-2", className)}>
-      {children}
-    </div>
-  );
-};
