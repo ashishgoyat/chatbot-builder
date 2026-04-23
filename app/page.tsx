@@ -121,7 +121,7 @@ export default function HomePage() {
                 className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-neutral-600 transition-colors duration-150 hover:text-neutral-900"
               >
                 <IconBrandGithub className="h-4 w-4" />
-                View who forged this bot
+                One who forged this bot
               </a>
             </div>
           </div>

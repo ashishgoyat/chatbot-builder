@@ -53,16 +53,16 @@ export default function DashboardPage() {
       }
 
       setUser(user);
-      await loadChatbots();
+      await loadChatbots(user.id);
     };
 
     init();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const loadChatbots = async () => {
+  const loadChatbots = async (userId: string) => {
     setLoading(true);
-    const { data } = await supabase.from("chatbots").select("*").order("created_at", { ascending: false });
+    const { data } = await supabase.from("chatbots").select("*").eq('user_id',userId).order("created_at", { ascending: false });
     setChatbots(data || []);
     setLoading(false);
   };
@@ -93,7 +93,9 @@ export default function DashboardPage() {
     setNewColor("#4f46e5");
     setCreating(false);
     setShowModal(false);
-    await loadChatbots();
+    if(user?.id != null) {
+      await loadChatbots(user.id);
+    }
   };
 
   const deleteChatbot = async (id: string) => {

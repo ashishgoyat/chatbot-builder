@@ -68,7 +68,12 @@ export async function POST(req: NextRequest) {
 
         if (chunksError) throw chunksError
 
-        const context = chunks?.length ? chunks.map((chunk: any) => chunk.content).join('\n\n') : "";
+        // Filter out low-similarity chunks so off-topic questions don't get hallucinated answers
+        const SIMILARITY_THRESHOLD = 0.5;
+        const relevantChunks = chunks?.filter((chunk: any) => chunk.similarity >= SIMILARITY_THRESHOLD) ?? [];
+        const context = relevantChunks.length
+            ? relevantChunks.map((chunk: any) => chunk.content).join('\n\n')
+            : "";
 
 
         // Retrieve recent chat history for the session
@@ -86,23 +91,21 @@ export async function POST(req: NextRequest) {
             content: msg.content,
         })) : [];
 
+        // Merge persona + RAG constraint into ONE system message.
+        // Two separate system messages let the first (persona) silently override the second (RAG rule).
+        const basePersona = chatbot.system_prompt
+            ? `${chatbot.system_prompt}\n\n`
+            : `You are a helpful AI assistant called "${chatbot.name}".\n\n`;
+
+        const ragConstraint = context
+            ? `IMPORTANT RULE: Answer using ONLY the context below. Do NOT use outside knowledge. If the answer is not in the context, say: "I\'m sorry, I don\'t have information about that in the provided documents."\n\nContext:\n${context}`
+            : `IMPORTANT RULE: No relevant information was found in the documents. You MUST say: "I\'m sorry, I don\'t have information about that." Do not answer from general knowledge.`;
 
         // Creating messages array for OpenAI completion, including system prompts, context, history, and user message
         const promptMessages: ModelMessage[] = [
             {
                 role: 'system',
-                content: chatbot.system_prompt || `You are a helpful AI assistant called "${chatbot.name}".`
-            },
-            {
-                role: 'system',
-                content: context
-                    ? `You must answer the user's question using ONLY the information below.
-
-                    Context:
-                    ${context}
-
-                    If the answer is not contained in the context, say you don't know.`
-                    : `No relevant information was found. If you cannot answer confidently, say you don't know.`
+                content: basePersona + ragConstraint
             },
 
             ...historyMessages,
