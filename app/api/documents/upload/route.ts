@@ -18,8 +18,8 @@ async function extractTextFromPDF(file: File) {
 
 // Initialize text splitter and embeddings
 const tokenSplitter = new RecursiveCharacterTextSplitter({
-    chunkSize: 500,
-    chunkOverlap: 100,
+    chunkSize: 1500,
+    chunkOverlap: 250,
 });
 
 
@@ -141,7 +141,7 @@ export async function POST(req: NextRequest) {
 
 
         return NextResponse.json({ success: true, documentId: documentData.id, status: "completed", chunks: tokenChunks.length })
-    } catch (err: unknown) {
+    } catch (err: any) {
         if(documentId) {
             // Best-effort; don't mask the original error if this fails.
             try {

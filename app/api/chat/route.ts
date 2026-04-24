@@ -60,19 +60,30 @@ export async function POST(req: NextRequest) {
         if (!chatbot) return NextResponse.json({ error: 'Chatbot not found' }, { status: 404 })
 
 
-        // Generate embedding for the user message and retrieve relevant document chunks
-        const queryEmbedding = await embeddings.embedQuery(message)
+        // Generate embedding using recent history + current message for better multi-turn retrieval
+        const { data: recentHistory } = await supabase
+            .from("messages")
+            .select("role, content")
+            .eq("session_id", session_id)
+            .order("created_at", { ascending: false })
+            .limit(2);
+
+        const contextualQuery = recentHistory && recentHistory.length > 0
+            ? [...recentHistory].reverse().map((m: any) => m.content).join(" ") + " " + message
+            : message;
+
+        const queryEmbedding = await embeddings.embedQuery(contextualQuery)
 
         const { data: chunks, error: chunksError } = await supabase.rpc('match_document_chunks', {
             query_embedding: queryEmbedding,
             chatbot_id,
-            match_count: 3,
+            match_count: 5,
         })
 
         if (chunksError) throw chunksError
 
         // Filter out low-similarity chunks so off-topic questions don't get hallucinated answers
-        const SIMILARITY_THRESHOLD = 0.3; // Cohere cosine similarity — 0.3 is a safe floor for relevant chunks
+        const SIMILARITY_THRESHOLD = 0.2; // Cohere cosine similarity — 0.3 is a safe floor for relevant chunks
         const relevantChunks = chunks?.filter((chunk: any) => chunk.similarity >= SIMILARITY_THRESHOLD) ?? [];
         const context = relevantChunks.length
             ? relevantChunks.map((chunk: any) => chunk.content).join('\n\n')
@@ -101,8 +112,8 @@ export async function POST(req: NextRequest) {
             : `You are a helpful AI assistant called "${chatbot.name}".\n\n`;
 
         const ragConstraint = context
-            ? `IMPORTANT RULE: Answer using ONLY the context below. Do NOT use outside knowledge. If the answer is not in the context, say: "I\'m sorry, I don\'t have information about that in the provided documents."\n\nContext:\n${context}`
-            : `IMPORTANT RULE: No relevant information was found in the documents. You MUST say: "I\'m sorry, I don\'t have information about that." Do not answer from general knowledge.`;
+            ? `Use the context below as your primary source. Answer helpfully and completely. If the exact answer isn't stated but can be reasonably inferred from the context, do so. Only say you don't have information if the topic is completely unrelated to the provided documents.\n\nContext:\n${context}`
+            : `No relevant document content was found for this query. Let the user know they may need to rephrase their question, or ask something related to the documents you have been trained on.`;
 
         // Creating messages array for OpenAI completion, including system prompts, context, history, and user message
         const promptMessages: ModelMessage[] = [
