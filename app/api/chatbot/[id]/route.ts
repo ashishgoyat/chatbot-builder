@@ -1,9 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(req: NextRequest) {
-    const { searchParams } = new URL(req.url);
-    const id = searchParams.get("id");
+type Params = { params: Promise<{ id: string }> };
+
+export async function GET(req: NextRequest, { params }: Params) {
+    const { id } = await params;
 
     try {
         const supabase = await createClient()
@@ -21,9 +22,8 @@ export async function GET(req: NextRequest) {
     }
 }
 
-export async function DELETE(req: NextRequest) {
-    const { searchParams } = new URL(req.url);
-    const id = searchParams.get("id");
+export async function DELETE(req: NextRequest, { params }: Params) {
+    const { id } = await params;
 
     try {
         const supabase = await createClient()

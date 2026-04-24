@@ -11,7 +11,7 @@ import {
 const features = [
   {
     title: "Bring your own docs",
-    description: "Upload PDFs and let your chatbot answer from your actual knowledge base.",
+    description: "Upload PDFs and let your chatbot answer from your given knowledge base.",
     icon: IconDatabase,
   },
   {
@@ -31,7 +31,6 @@ const marqueeItems = [
   "Context-aware replies",
   "Document retrieval",
   "Embeddable widget",
-  "Live preview",
   "Supabase auth",
   "Streaming responses",
   "Production ready",
@@ -44,7 +43,7 @@ export default function HomePage() {
         <nav className="glass-panel flex items-center justify-between px-5 py-3 sm:px-6">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 to-sky-600 text-sm font-bold text-white">
-              BF
+              AI
             </div>
             <div>
               <p className="text-sm font-semibold text-neutral-900">BotForge</p>

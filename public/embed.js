@@ -7,7 +7,7 @@
     return;
   }
 
-  const origin = "http://localhost:3000";
+  const origin = script?.getAttribute("data-origin") || window.location.origin;
   let open = false;
 
   const iframe = document.createElement("iframe");

@@ -37,7 +37,10 @@ export async function POST(req: NextRequest) {
 
         // Extract and validate input parameters
         const { chatbot_id, messages, session_id } = await req.json()
-        const message = messages[messages.length - 1].parts[0].text
+        // Safely extract the last user message — parts[0].text is the AI SDK format
+        const lastMsg = messages?.[messages.length - 1]
+        const message: string = lastMsg?.parts?.[0]?.text ?? lastMsg?.content ?? ""
+
 
         if (!chatbot_id || !message || !session_id) return NextResponse.json({ error: "Missing chatbot_id, message, or session_id" }, { status: 400 })
 
@@ -69,7 +72,7 @@ export async function POST(req: NextRequest) {
         if (chunksError) throw chunksError
 
         // Filter out low-similarity chunks so off-topic questions don't get hallucinated answers
-        const SIMILARITY_THRESHOLD = 0.5;
+        const SIMILARITY_THRESHOLD = 0.3; // Cohere cosine similarity — 0.3 is a safe floor for relevant chunks
         const relevantChunks = chunks?.filter((chunk: any) => chunk.similarity >= SIMILARITY_THRESHOLD) ?? [];
         const context = relevantChunks.length
             ? relevantChunks.map((chunk: any) => chunk.content).join('\n\n')

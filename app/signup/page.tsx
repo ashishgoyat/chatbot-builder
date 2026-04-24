@@ -71,7 +71,6 @@ export default function SignupForm() {
 
             <section className="p-7 reveal-up reveal-delay-1 md:p-10">
               <h2 className="text-2xl font-semibold tracking-tight text-neutral-900">Sign up</h2>
-              <p className="mt-2 text-sm text-neutral-600">No credit card required.</p>
 
               <div className="mt-6 space-y-4">
                 <div>

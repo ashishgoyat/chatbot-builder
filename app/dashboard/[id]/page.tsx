@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -11,7 +11,6 @@ import {
   IconCode,
   IconCopy,
   IconFileText,
-  IconMessageCircle,
   IconTrash,
   IconUpload,
 } from "@tabler/icons-react";
@@ -25,27 +24,24 @@ type Chatbot = {
 
 type Document = {
   id: string;
-  content: string;
+  file_name: string;
+  status: string;
   created_at: string;
 };
 
-type Tab = "documents" | "embed" | "preview";
+type Tab = "documents" | "embed";
 
 export default function ChatbotDetailPage() {
   const [chatbot, setChatbot] = useState<Chatbot | null>(null);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
+  const [documentsError, setDocumentsError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("documents");
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-
-  const [messages, setMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
-  const [chatInput, setChatInput] = useState("");
-  const [chatLoading, setChatLoading] = useState(false);
-  const chatEndRef = useRef<HTMLDivElement>(null);
 
   const router = useRouter();
   const params = useParams();
@@ -66,10 +62,6 @@ export default function ChatbotDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, chatLoading]);
-
   const fetchChatbot = async () => {
     const { data } = await supabase.from("chatbots").select("*").eq("id", id).single();
     if (!data) return router.push("/dashboard");
@@ -78,11 +70,20 @@ export default function ChatbotDetailPage() {
 
   const fetchDocuments = async () => {
     setLoading(true);
-    const { data } = await supabase
+    setDocumentsError(null);
+    const { data, error } = await supabase
       .from("documents")
-      .select("id, content, created_at")
+      .select("id, file_name, status, created_at")
       .eq("chatbot_id", id)
       .order("created_at", { ascending: false });
+    if (error) {
+      console.error("Error fetching documents:", error);
+      setDocuments([]);
+      setDocumentsError(error.message);
+      setLoading(false);
+      return;
+    }
+
     setDocuments(data || []);
     setLoading(false);
   };
@@ -128,28 +129,6 @@ export default function ChatbotDetailPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const sendPreviewMessage = async () => {
-    if (!chatInput.trim() || chatLoading) return;
-    const userMsg = chatInput.trim();
-    setChatInput("");
-    setMessages((prev) => [...prev, { role: "user", content: userMsg }]);
-    setChatLoading(true);
-
-    try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chatbot_id: id, message: userMsg }),
-      });
-      const data = await res.json();
-      setMessages((prev) => [...prev, { role: "assistant", content: data.reply }]);
-    } catch {
-      setMessages((prev) => [...prev, { role: "assistant", content: "Something went wrong. Please try again." }]);
-    } finally {
-      setChatLoading(false);
-    }
-  };
-
   if (!chatbot) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -162,7 +141,6 @@ export default function ChatbotDetailPage() {
 
   const tabs: { key: Tab; label: string; icon: React.ReactNode }[] = [
     { key: "documents", label: "Documents", icon: <IconFileText className="h-4 w-4" /> },
-    { key: "preview", label: "Preview", icon: <IconMessageCircle className="h-4 w-4" /> },
     { key: "embed", label: "Embed", icon: <IconCode className="h-4 w-4" /> },
   ];
 
@@ -242,6 +220,10 @@ export default function ChatbotDetailPage() {
 
                 {loading ? (
                   <div className="rounded-2xl border border-neutral-200 bg-white p-8 text-center text-sm text-neutral-500">Loading documents...</div>
+                ) : documentsError ? (
+                  <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
+                    Failed to load documents: {documentsError}
+                  </div>
                 ) : documents.length === 0 ? (
                   <div className="rounded-2xl border-2 border-dashed border-neutral-300 bg-white px-6 py-12 text-center">
                     <p className="text-sm text-neutral-600">No documents uploaded yet.</p>
@@ -250,7 +232,12 @@ export default function ChatbotDetailPage() {
                   <div className="max-h-[520px] space-y-3 overflow-y-auto pr-1">
                     {documents.map((doc) => (
                       <article key={doc.id} className="soft-card p-4 reveal-up">
-                        <p className="line-clamp-3 text-sm leading-relaxed text-neutral-700">{doc.content || "Document content not available."}</p>
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-neutral-900">{doc.file_name}</p>
+                            <p className="mt-1 text-xs text-neutral-500">Status: {doc.status}</p>
+                          </div>
+                        </div>
                         <div className="mt-3 flex items-center justify-between">
                           <time className="text-xs text-neutral-500">
                             {new Date(doc.created_at).toLocaleDateString("en-US", {
@@ -273,83 +260,6 @@ export default function ChatbotDetailPage() {
                   </div>
                 )}
               </div>
-            </div>
-          ) : null}
-
-          {tab === "preview" ? (
-            <div className="section-enter mx-auto max-w-md">
-              <div className="overflow-hidden rounded-3xl border border-neutral-200 bg-white shadow-lg shadow-indigo-900/5">
-                <div className="flex items-center gap-3 border-b border-neutral-200 bg-neutral-50 px-4 py-3">
-                  <div
-                    className="flex h-9 w-9 items-center justify-center rounded-full"
-                    style={{ backgroundColor: `${chatbot.color}1A`, border: `1px solid ${chatbot.color}40` }}
-                  >
-                    <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: chatbot.color }} />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-neutral-900">{chatbot.name}</p>
-                    <p className="flex items-center gap-1 text-xs text-emerald-600">
-                      <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                      Online
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex h-96 flex-col gap-3 overflow-y-auto bg-white p-4">
-                  <div className="max-w-[80%] rounded-2xl rounded-bl-sm border border-neutral-200 bg-neutral-50 px-4 py-2.5 text-sm text-neutral-700">
-                    {chatbot.welcome_message}
-                  </div>
-
-                  {messages.map((msg, idx) => (
-                    <div
-                      key={idx}
-                      className={
-                        msg.role === "user"
-                          ? "ml-auto max-w-[80%] rounded-2xl rounded-br-sm px-4 py-2.5 text-sm text-white"
-                          : "max-w-[80%] rounded-2xl rounded-bl-sm border border-neutral-200 bg-neutral-50 px-4 py-2.5 text-sm text-neutral-700"
-                      }
-                      style={
-                        msg.role === "user"
-                          ? { background: `linear-gradient(135deg, ${chatbot.color}, #0284c7)` }
-                          : undefined
-                      }
-                    >
-                      {msg.content}
-                    </div>
-                  ))}
-
-                  {chatLoading ? (
-                    <div className="max-w-[80%] rounded-2xl rounded-bl-sm border border-neutral-200 bg-neutral-50 px-4 py-3 text-xs text-neutral-500">
-                      Thinking...
-                    </div>
-                  ) : null}
-
-                  <div ref={chatEndRef} />
-                </div>
-
-                <div className="flex gap-2 border-t border-neutral-200 bg-neutral-50 p-3">
-                  <input
-                    type="text"
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && sendPreviewMessage()}
-                    placeholder="Ask something..."
-                    className="input-polish"
-                  />
-                  <button
-                    onClick={sendPreviewMessage}
-                    disabled={chatLoading || !chatInput.trim()}
-                    className="btn-primary px-4 disabled:opacity-60"
-                    style={{ background: `linear-gradient(135deg, ${chatbot.color}, #0284c7)` }}
-                  >
-                    Send
-                  </button>
-                </div>
-              </div>
-
-              <p className="mt-3 text-center text-xs text-neutral-500">
-                Live preview. Add training documents to improve response quality.
-              </p>
             </div>
           ) : null}
 
@@ -385,8 +295,7 @@ export default function ChatbotDetailPage() {
                 <div className="mt-6 space-y-3 rounded-2xl border border-neutral-200 bg-white p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Flow</p>
                   <p className="text-sm text-neutral-700">1. Add script tag to your website.</p>
-                  <p className="text-sm text-neutral-700">2. A launcher appears in the bottom-right corner.</p>
-                  <p className="text-sm text-neutral-700">3. Visitors can chat using your trained content.</p>
+                  <p className="text-sm text-neutral-700">2. A launcher appears in the bottom-right corner through which Visitors can chat.</p>
                 </div>
               </div>
             </div>

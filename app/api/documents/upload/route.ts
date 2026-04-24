@@ -39,6 +39,23 @@ export async function POST(req: NextRequest) {
             inputType: "search_document",
         });
 
+        const setDocumentStatus = async (id: string, status: string) => {
+            const { data, error } = await supabase
+                .from("documents")
+                .update({ status })
+                .eq("id", id)
+                .select("id, status")
+                .maybeSingle();
+
+            // If RLS blocks the update, PostgREST often returns 0 rows updated with no error.
+            if (error || !data) {
+                throw new Error(
+                    `Failed to update document status to "${status}". ` +
+                    `This is usually caused by Supabase RLS/policies denying updates for the row.`
+                );
+            }
+        };
+
 
         // Authenticate user and validate input
         const { data: { user } } = await supabase.auth.getUser();
@@ -74,10 +91,8 @@ export async function POST(req: NextRequest) {
 
         documentId = documentData.id;
 
-
         // Update document status to "processing"
-        const { error: setProcessingError } = await supabase.from("documents").update({ status: "processing" }).eq("id", documentData.id);
-        if (setProcessingError) throw setProcessingError;
+        await setDocumentStatus(documentData.id, "processing");
 
 
         // Extract text from the PDF
@@ -92,8 +107,8 @@ export async function POST(req: NextRequest) {
 
 
         // set document status to "embedding" before starting the embedding process
-        const { error: setEmbeddingError } = await supabase.from("documents").update({ status: "embedding" }).eq("id", documentData.id);
-        if (setEmbeddingError) throw setEmbeddingError;
+        await setDocumentStatus(documentData.id, "embedding");
+
 
 
         // Generate embeddings for each chunk and store them in the database, processing in batches of 50 to optimize performance
@@ -122,14 +137,16 @@ export async function POST(req: NextRequest) {
 
 
         // After successful embedding, update document status to "completed"
-        const { error: setCompletedError } = await supabase.from('documents').update({ status: "completed" }).eq('id', documentData.id);
-        if (setCompletedError) throw setCompletedError;
+        await setDocumentStatus(documentData.id, "completed");
 
 
-        return NextResponse.json({ success: true, chunks: tokenChunks.length })
-    } catch (err: any) {
+        return NextResponse.json({ success: true, documentId: documentData.id, status: "completed", chunks: tokenChunks.length })
+    } catch (err: unknown) {
         if(documentId) {
-            await supabase.from('documents').update({ status: "failed" }).eq('id', documentId);
+            // Best-effort; don't mask the original error if this fails.
+            try {
+                await supabase.from('documents').update({ status: "failed" }).eq('id', documentId);
+            } catch {}
         }
         console.error("Error occurred while processing the document:", err);
         return NextResponse.json({ error: "An error occurred while processing the document" }, { status: 500 });

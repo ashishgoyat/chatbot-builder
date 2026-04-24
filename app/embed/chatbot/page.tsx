@@ -27,19 +27,15 @@ export default function EmbedChatbotPage() {
 
         const resSession = await fetch("/api/sessions", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ chatbotId }),
         });
         const dataSession = await resSession.json();
         setSessionId(dataSession.sessionId);
 
-        const resChatbot = await fetch(`/api/chatbot/[id]?id=${chatbotId}`, {
+        const resChatbot = await fetch(`/api/chatbot/${chatbotId}`, {
           method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
         });
         const dataChatbot = await resChatbot.json();
 
@@ -49,7 +45,6 @@ export default function EmbedChatbotPage() {
         console.error("Error in creating session or fetching chatbot data", err);
       }
     };
-
     init();
   }, [chatbotId]);
 
@@ -68,6 +63,8 @@ function ChatUI({ sessionId, chatbot, chatbotId }: { sessionId: string; chatbot:
   const [input, setInput] = useState("");
   const chatEndRef = useRef<HTMLDivElement>(null);
 
+  // useChat in ai-sdk v6 already tracks both user + assistant messages in `messages`.
+  // sendMessage() optimistically adds the user message immediately — no separate state needed.
   const { messages, sendMessage, status } = useChat({
     transport: new DefaultChatTransport({
       api: "/api/chat",
@@ -81,6 +78,13 @@ function ChatUI({ sessionId, chatbot, chatbotId }: { sessionId: string; chatbot:
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, status]);
+
+  const handleSend = () => {
+    const text = input.trim();
+    if (!text || status === "streaming") return;
+    sendMessage({ text });
+    setInput("");
+  };
 
   return (
     <div className="h-screen bg-neutral-50 p-3">
@@ -102,35 +106,44 @@ function ChatUI({ sessionId, chatbot, chatbotId }: { sessionId: string; chatbot:
         </header>
 
         <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-4">
+          {/* Welcome message */}
           <div className="max-w-[80%] rounded-2xl rounded-bl-sm border border-neutral-200 bg-neutral-50 px-4 py-2.5 text-sm text-neutral-700">
             {chatbot.welcome_message}
           </div>
 
-          {messages.map((msg, i) => (
-            <div
-              key={i}
-              className={
-                msg.role === "user"
-                  ? "ml-auto max-w-[80%] rounded-2xl rounded-br-sm px-4 py-2.5 text-sm text-white"
-                  : "max-w-[80%] rounded-2xl rounded-bl-sm border border-neutral-200 bg-neutral-50 px-4 py-2.5 text-sm text-neutral-700"
-              }
-              style={
-                msg.role === "user"
-                  ? {
-                      background: `linear-gradient(135deg, ${chatbot.color}, #0284c7)`,
-                    }
-                  : undefined
-              }
-            >
-              {msg.parts.map((part, j) => (part.type === "text" ? <span key={j}>{part.text}</span> : null))}
-            </div>
-          ))}
+          {/* All messages — useChat includes both user and assistant */}
+          {messages.map((msg, i) => {
+            const text = msg.parts
+              ?.filter((p: any) => p.type === "text")
+              .map((p: any) => p.text)
+              .join("") ?? (msg as any).content ?? "";
 
-          {status === "streaming" ? (
+            if (!text) return null;
+
+            return (
+              <div
+                key={i}
+                className={
+                  msg.role === "user"
+                    ? "ml-auto max-w-[80%] rounded-2xl rounded-br-sm px-4 py-2.5 text-sm text-white"
+                    : "max-w-[80%] rounded-2xl rounded-bl-sm border border-neutral-200 bg-neutral-50 px-4 py-2.5 text-sm text-neutral-700"
+                }
+                style={
+                  msg.role === "user"
+                    ? { background: `linear-gradient(135deg, ${chatbot.color}, #0284c7)` }
+                    : undefined
+                }
+              >
+                {text}
+              </div>
+            );
+          })}
+
+          {status === "streaming" && (
             <div className="max-w-[80%] rounded-2xl rounded-bl-sm border border-neutral-200 bg-neutral-50 px-4 py-2.5 text-xs text-neutral-500">
               Thinking...
             </div>
-          ) : null}
+          )}
 
           <div ref={chatEndRef} />
         </div>
@@ -140,20 +153,12 @@ function ChatUI({ sessionId, chatbot, chatbotId }: { sessionId: string; chatbot:
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                sendMessage({ text: input });
-                setInput("");
-              }
-            }}
+            onKeyDown={(e) => { if (e.key === "Enter") handleSend(); }}
             placeholder="Ask something..."
             className="input-polish"
           />
           <button
-            onClick={() => {
-              sendMessage({ text: input });
-              setInput("");
-            }}
+            onClick={handleSend}
             disabled={status === "streaming" || !input.trim()}
             className="btn-primary px-4 disabled:opacity-60"
             style={{ background: `linear-gradient(135deg, ${chatbot.color}, #0284c7)` }}
