@@ -70,6 +70,7 @@ export default function DashboardPage() {
 
   const createChatbot = async () => {
     if (!newName.trim()) return;
+    if (newSystemPrompt.length > 500) return;
 
     setCreating(true);
     const {
@@ -272,13 +273,19 @@ export default function DashboardPage() {
               </div>
 
               <div>
-                <label className="mb-1.5 inline-block text-sm font-medium text-neutral-700">System Prompt for bot</label>
-                <input
-                  type="text"
+                <div className="mb-1.5 flex items-center justify-between">
+                  <label className="text-sm font-medium text-neutral-700">System prompt</label>
+                  <span className={`text-xs tabular-nums ${newSystemPrompt.length >= 500 ? "text-red-500 font-medium" : "text-neutral-400"}`}>
+                    {newSystemPrompt.length}/500
+                  </span>
+                </div>
+                <textarea
                   value={newSystemPrompt}
                   onChange={(e) => setSystemPrompt(e.target.value)}
-                  placeholder="Hi! How can I help you?"
-                  className="input-polish"
+                  maxLength={500}
+                  rows={3}
+                  placeholder="You are a helpful support assistant for Acme Corp..."
+                  className="input-polish resize-none"
                 />
               </div>
 

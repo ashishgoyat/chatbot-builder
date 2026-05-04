@@ -4,6 +4,7 @@ import { CohereEmbeddings } from "@langchain/cohere"
 import { NextRequest, NextResponse } from "next/server";
 import { streamText, type ModelMessage } from "ai";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider"
+import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit"
 
 
 const openrouter = createOpenRouter({ apiKey: process.env.OPENROUTER_API_KEY })
@@ -41,8 +42,11 @@ export async function POST(req: NextRequest) {
         const lastMsg = messages?.[messages.length - 1]
         const message: string = lastMsg?.parts?.[0]?.text ?? lastMsg?.content ?? ""
 
-
         if (!chatbot_id || !message || !session_id) return NextResponse.json({ error: "Missing chatbot_id, message, or session_id" }, { status: 400 })
+
+        // 15 messages per minute per session
+        const { allowed, retryAfter } = checkRateLimit(`chat:${session_id}`, 15, 60_000)
+        if (!allowed) return rateLimitResponse(retryAfter)
 
         if (message.trim().length > 400) {
             return NextResponse.json({ error: "Message exceeds maximum length of 400 characters" }, { status: 400 })

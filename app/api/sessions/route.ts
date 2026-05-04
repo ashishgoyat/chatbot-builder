@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import nodemailer from "nodemailer";
 import { NextRequest, NextResponse } from "next/server";
+import { checkRateLimit, getIP, rateLimitResponse } from "@/lib/rate-limit";
 
 const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -15,10 +16,15 @@ const transporter = nodemailer.createTransport({
 export async function POST(req: NextRequest) {
     const supabase = await createClient();
     try{
+        // 10 session creations per hour per IP
+        const ip = getIP(req)
+        const { allowed, retryAfter } = checkRateLimit(`session:${ip}`, 5, 60 * 60_000)
+        if (!allowed) return rateLimitResponse(retryAfter)
+
         const {chatbotId} = await req.json()
         if(!chatbotId) return NextResponse.json({error : "Chatbot Id not found"},{status : 400})
         const user_agent = req.headers.get('user-agent') ?? null
-        const ip = req.headers.get('x-forwarded-for')?.split(',')[0] ?? null
+        const ip_address = req.headers.get('x-forwarded-for')?.split(',')[0] ?? null
 
         const { data: chatbot, error: chatbotError } = await supabase
             .from('chatbots')
@@ -51,7 +57,7 @@ export async function POST(req: NextRequest) {
         const { data: sessionData, error: sessionError } = await supabase.from('sessions').insert({
             chatbot_id: chatbotId,
             user_agent,
-            ip_address: ip
+            ip_address,
         }).select().single();
 
         if (sessionError) return NextResponse.json({ error: 'Failed to create session' }, { status: 500 });

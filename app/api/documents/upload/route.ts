@@ -4,6 +4,7 @@ import { extractText } from "unpdf"
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters"
 import { CohereEmbeddings } from "@langchain/cohere";
 import { createClient } from "@/lib/supabase/server";
+import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 
 // function to extract text from PDF using pdf-parse
@@ -60,6 +61,10 @@ export async function POST(req: NextRequest) {
         // Authenticate user and validate input
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+        // 10 uploads per hour per user
+        const { allowed, retryAfter } = checkRateLimit(`upload:${user.id}`, 10, 60 * 60_000)
+        if (!allowed) return rateLimitResponse(retryAfter)
 
         const formdata = await req.formData();
         const file = formdata.get('file') as File;

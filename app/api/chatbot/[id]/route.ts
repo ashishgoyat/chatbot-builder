@@ -1,17 +1,21 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
+import { checkRateLimit, getIP, rateLimitResponse } from "@/lib/rate-limit";
 
 type Params = { params: Promise<{ id: string }> };
 
 export async function GET(req: NextRequest, { params }: Params) {
     const { id } = await params;
 
+    // 60 requests per minute per IP
+    const { allowed, retryAfter } = checkRateLimit(`chatbot-get:${getIP(req)}`, 60, 60_000)
+    if (!allowed) return rateLimitResponse(retryAfter)
+
     try {
         const supabase = await createClient()
 
         const { data, error } = await supabase.from('chatbots').select('name, color, welcome_message').eq('id', id).single()
         if (error || !data) {
-            console.log(error)
             return NextResponse.json({ error: 'Chatbot not found' }, { status: 404 })
         }
 

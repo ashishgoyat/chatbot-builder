@@ -74,7 +74,7 @@ export default function PricingPage() {
                 </Link>
               ) : (
                 <div className="mt-auto inline-flex items-center justify-center rounded-full border border-dashed border-neutral-300 bg-neutral-100 px-5 py-2.5 text-sm font-semibold text-neutral-600 dark:border-white/20 dark:bg-neutral-800 dark:text-neutral-200">
-                  Comming soon
+                  Coming soon
                 </div>
               )}
             </article>
