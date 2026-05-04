@@ -16,10 +16,10 @@ export default function PricingPage() {
           <div className="relative z-10 mx-auto max-w-3xl text-center">
             <span className="editorial-kicker reveal-up">Simple billing, clear limits</span>
             <h1 className="mt-4 text-4xl font-semibold tracking-tight text-neutral-900 reveal-up reveal-delay-1 sm:text-5xl dark:text-neutral-100">
-              Pricing that scales by monthly sessions
+              Pricing that scales by sessions
             </h1>
             <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-neutral-600 reveal-up reveal-delay-2 sm:text-lg dark:text-neutral-300">
-              Choose your monthly session capacity, launch your assistant, and upgrade anytime when your usage grows.
+              Choose your session capacity, launch your assistant, and upgrade anytime when your usage grows.
             </p>
           </div>
         </section>
@@ -56,7 +56,7 @@ export default function PricingPage() {
 
               <div className="mb-5 rounded-xl border border-neutral-200 bg-white/80 px-4 py-3 dark:border-white/10 dark:bg-neutral-800/75">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-500 dark:text-neutral-400">Session limit</p>
-                <p className="mt-1 text-lg font-semibold text-neutral-900 dark:text-neutral-100">{plan.sessions} sessions per month</p>
+                <p className="mt-1 text-lg font-semibold text-neutral-900 dark:text-neutral-100">{plan.sessions} sessions</p>
               </div>
 
               <ul className="mb-6 space-y-2 text-sm text-neutral-700 dark:text-neutral-300">

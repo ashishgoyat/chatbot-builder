@@ -33,6 +33,7 @@ export default function DashboardPage() {
   const [user, setUser] = useState<{ email?: string | null } | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [newName, setNewName] = useState("");
+  const [newSystemPrompt, setSystemPrompt] = useState("");
   const [newWelcome, setNewWelcome] = useState("Hi! How can I help you?");
   const [newColor, setNewColor] = useState("#4f46e5");
   const [creating, setCreating] = useState(false);
@@ -78,6 +79,7 @@ export default function DashboardPage() {
     const { error } = await supabase.from("chatbots").insert({
       name: newName.trim(),
       welcome_message: newWelcome,
+      system_prompt: newSystemPrompt,
       color: newColor,
       user_id: user?.id,
     });
@@ -90,6 +92,7 @@ export default function DashboardPage() {
 
     setNewName("");
     setNewWelcome("Hi! How can I help you?");
+    setSystemPrompt("");
     setNewColor("#4f46e5");
     setCreating(false);
     setShowModal(false);
@@ -263,6 +266,17 @@ export default function DashboardPage() {
                   type="text"
                   value={newWelcome}
                   onChange={(e) => setNewWelcome(e.target.value)}
+                  placeholder="Hi! How can I help you?"
+                  className="input-polish"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1.5 inline-block text-sm font-medium text-neutral-700">System Prompt for bot</label>
+                <input
+                  type="text"
+                  value={newSystemPrompt}
+                  onChange={(e) => setSystemPrompt(e.target.value)}
                   placeholder="Hi! How can I help you?"
                   className="input-polish"
                 />

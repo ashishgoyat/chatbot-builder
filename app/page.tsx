@@ -94,13 +94,13 @@ export default function HomePage() {
               </div>
 
               <a
-                href="https://github.com/ashishgoyat/chatbot-builder"
+                href="https://github.com/ashishgoyat/"
                 target="_blank"
                 rel="noreferrer"
                 className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-neutral-600 transition-colors duration-150 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-neutral-100"
               >
                 <IconBrandGithub className="h-4 w-4" />
-                Github link
+                Github
               </a>
             </div>
           </div>
