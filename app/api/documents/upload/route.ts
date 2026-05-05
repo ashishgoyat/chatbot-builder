@@ -5,6 +5,7 @@ import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters"
 import { CohereEmbeddings } from "@langchain/cohere";
 import { createClient } from "@/lib/supabase/server";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 
 // function to extract text from PDF using pdf-parse
@@ -153,7 +154,7 @@ export async function POST(req: NextRequest) {
                 await supabase.from('documents').update({ status: "failed" }).eq('id', documentId);
             } catch {}
         }
-        console.error("Error occurred while processing the document:", err);
+        logger.error("POST /api/documents/upload failed", err);
         return NextResponse.json({ error: "An error occurred while processing the document" }, { status: 500 });
     }
 }

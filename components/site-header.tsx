@@ -19,12 +19,6 @@ export function SiteHeader() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Link
-            href="/pricing"
-            className="inline-flex h-10 items-center text-sm font-semibold text-neutral-700 transition-colors duration-200 hover:text-indigo-700 no-underline dark:text-neutral-200 dark:hover:text-indigo-300"
-          >
-            Pricing
-          </Link>
           <ThemeToggle />
           <Link href="/login" className="btn-secondary hidden no-underline sm:inline-flex">
             Login

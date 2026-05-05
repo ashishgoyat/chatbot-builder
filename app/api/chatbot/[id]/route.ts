@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { checkRateLimit, getIP, rateLimitResponse } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -21,8 +22,9 @@ export async function GET(req: NextRequest, { params }: Params) {
 
         return NextResponse.json(data, { headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET" } })
 
-    } catch (err: any) {
-        return NextResponse.json({ error: err.message }, { status: 500 })
+    } catch (err) {
+        logger.error('GET /api/chatbot/[id] failed', err)
+        return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 })
     }
 }
 
@@ -46,7 +48,8 @@ export async function DELETE(req: NextRequest, { params }: Params) {
         if (error) throw error
 
         return NextResponse.json({ success: true })
-    } catch (err: any) {
-        return NextResponse.json({ error: err.message }, { status: 500 })
+    } catch (err) {
+        logger.error('DELETE /api/chatbot/[id] failed', err)
+        return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 })
     }
 }

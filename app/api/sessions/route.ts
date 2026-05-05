@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import nodemailer from "nodemailer";
 import { NextRequest, NextResponse } from "next/server";
 import { checkRateLimit, getIP, rateLimitResponse } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -23,20 +24,15 @@ export async function POST(req: NextRequest) {
 
         const {chatbotId} = await req.json()
         if(!chatbotId) return NextResponse.json({error : "Chatbot Id not found"},{status : 400})
-        const user_agent = req.headers.get('user-agent') ?? null
-        const ip_address = req.headers.get('x-forwarded-for')?.split(',')[0] ?? null
 
-        const { data: chatbot, error: chatbotError } = await supabase
-            .from('chatbots')
-            .select('sessions, user_id, name')
-            .eq('id', chatbotId)
-            .single();
+        const { data: result, error: claimError } = await supabase
+            .rpc('try_claim_session', { p_chatbot_id: chatbotId });
 
-        if (chatbotError || !chatbot) return NextResponse.json({ error: 'Chatbot not found' }, { status: 404 });
+        if (claimError || !result) return NextResponse.json({ error: 'Chatbot not found' }, { status: 404 });
 
-        if (chatbot.sessions <= 0) {
+        if (!result.claimed) {
             const adminClient = createAdminClient();
-            const { data: userData } = await adminClient.auth.admin.getUserById(chatbot.user_id);
+            const { data: userData } = await adminClient.auth.admin.getUserById(result.user_id);
             const ownerEmail = userData?.user?.email;
 
             if (ownerEmail) {
@@ -45,8 +41,8 @@ export async function POST(req: NextRequest) {
                     to: ownerEmail,
                     subject: 'Session limit reached for your chatbot',
                     html: `<p>Hi,</p>
-                           <p>Your chatbot <strong>${chatbot.name}</strong> has reached its session limit. No new visitor sessions can be created.</p>
-                           <p>Please upgrade your plan or increase the session limit from your dashboard.</p>
+                           <p>Your chatbot <strong>${result.name}</strong> has reached its session limit. No new visitor sessions can be created.</p>
+                           <p>Thanks for Using.</p>
                            <p>— The BotForge Team</p>`,
                 });
             }
@@ -56,24 +52,15 @@ export async function POST(req: NextRequest) {
 
         const { data: sessionData, error: sessionError } = await supabase.from('sessions').insert({
             chatbot_id: chatbotId,
-            user_agent,
-            ip_address,
         }).select().single();
 
         if (sessionError) return NextResponse.json({ error: 'Failed to create session' }, { status: 500 });
-
-        const { error: decrementError } = await supabase
-            .from('chatbots')
-            .update({ sessions: chatbot.sessions - 1 })
-            .eq('id', chatbotId);
-
-        if (decrementError) console.error('Failed to decrement session count:', decrementError);
 
         const sessionId = sessionData.id;
 
         return NextResponse.json({success: true, sessionId});
     } catch (err: any){
-        console.error("Error while creating the session Id: ", err);
+        logger.error("POST /api/sessions failed", err);
         return NextResponse.json({error: "Error while creating session"}, {status: 500});
     }
 }

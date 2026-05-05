@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { streamText, type ModelMessage } from "ai";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider"
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit"
+import { logger } from "@/lib/logger"
 
 
 const openrouter = createOpenRouter({ apiKey: process.env.OPENROUTER_API_KEY })
@@ -161,7 +162,7 @@ export async function POST(req: NextRequest) {
 
 
     } catch (err) {
-        console.error("Error in POST /chat:", err);
+        logger.error("POST /api/chat failed", err);
         return NextResponse.json({ error: "An error occurred while processing the request" }, { status: 500 })
     }
 }
