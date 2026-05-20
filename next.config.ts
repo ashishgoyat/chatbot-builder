@@ -31,9 +31,14 @@ const nextConfig: NextConfig = {
         headers: securityHeaders,
       },
       {
-        // ... except the embed route, which must be iframeable from any origin
+        // ... except the embed route, which must be iframeable from any origin.
+        // Content-Security-Policy frame-ancestors takes precedence over X-Frame-Options
+        // in all modern browsers, so this overrides the SAMEORIGIN set above.
         source: "/embed/(.*)",
-        headers: securityHeaders.filter(h => h.key !== "X-Frame-Options"),
+        headers: [
+          ...securityHeaders.filter(h => h.key !== "X-Frame-Options"),
+          { key: "Content-Security-Policy", value: "frame-ancestors *" },
+        ],
       },
     ];
   },
