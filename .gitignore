@@ -43,3 +43,6 @@ next-env.d.ts
 a.html
 project_zip.zip
 PROJECT_CONTEXT.md
+branch_structure.json
+temp_auto_push.bat
+temp_interactive_push.bat
