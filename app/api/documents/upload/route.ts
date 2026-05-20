@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
         if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
         // 10 uploads per hour per user
-        const { allowed, retryAfter } = checkRateLimit(`upload:${user.id}`, 10, 60 * 60_000)
+        const { allowed, retryAfter } = await checkRateLimit(`upload:${user.id}`, 10, 60 * 60_000)
         if (!allowed) return rateLimitResponse(retryAfter)
 
         const formdata = await req.formData();

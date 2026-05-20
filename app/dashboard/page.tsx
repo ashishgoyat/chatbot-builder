@@ -119,12 +119,12 @@ export default function DashboardPage() {
       <header className="app-shell pt-6 nav-enter">
         <div className="glass-panel flex items-center justify-between px-5 py-3 sm:px-6">
           <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-neutral-500">Workspace</p>
-            <h1 className="text-xl font-semibold text-neutral-900">BotForge Dashboard</h1>
+            <p className="text-xs uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400">Workspace</p>
+            <h1 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">BotForge Dashboard</h1>
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="hidden rounded-full border border-neutral-200 bg-white px-3 py-1 text-xs text-neutral-600 sm:inline">
+            <span className="hidden rounded-full border border-neutral-200 bg-white px-3 py-1 text-xs text-neutral-600 dark:border-white/10 dark:bg-neutral-800 dark:text-neutral-300 sm:inline">
               {user?.email}
             </span>
             <button onClick={handleSignOut} className="btn-secondary">
@@ -143,8 +143,8 @@ export default function DashboardPage() {
           <div className="relative z-10 mb-8 flex flex-wrap items-end justify-between gap-4">
             <div>
               <p className="editorial-kicker">Control Center</p>
-              <h2 className="mt-2 text-3xl font-semibold tracking-tight text-neutral-900">Your chatbots</h2>
-              <p className="mt-2 text-sm text-neutral-600">Create, train, and deploy customer-facing AI assistants.</p>
+              <h2 className="mt-2 text-3xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-100">Your chatbots</h2>
+              <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">Create, train, and deploy customer-facing AI assistants.</p>
             </div>
 
             <button onClick={() => setShowModal(true)} className="btn-primary">
@@ -156,8 +156,8 @@ export default function DashboardPage() {
           {!loading && chatbots.length > 0 ? (
             <div className="relative z-10 mb-6 grid gap-3 sm:grid-cols-3">
               <div className="soft-card reveal-up p-4">
-                <p className="text-xs uppercase tracking-wide text-neutral-500">Total</p>
-                <p className="mt-1 text-2xl font-semibold text-neutral-900">{chatbots.length}</p>
+                <p className="text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Total</p>
+                <p className="mt-1 text-2xl font-semibold text-neutral-900 dark:text-neutral-100">{chatbots.length}</p>
               </div>
             </div>
           ) : null}
@@ -165,14 +165,14 @@ export default function DashboardPage() {
           {loading ? (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {[1, 2, 3].map((item) => (
-                <div key={item} className="h-44 animate-pulse rounded-2xl border border-neutral-200 bg-white/80" />
+                <div key={item} className="h-44 animate-pulse rounded-2xl border border-neutral-200 bg-white/80 dark:border-white/10 dark:bg-neutral-800/50" />
               ))}
             </div>
           ) : chatbots.length === 0 ? (
-            <div className="rounded-3xl border-2 border-dashed border-neutral-300 bg-white/70 px-6 py-14 text-center">
-              <IconRobot className="mx-auto mb-4 h-10 w-10 text-neutral-400" />
-              <h3 className="text-lg font-semibold text-neutral-900">No chatbots yet</h3>
-              <p className="mx-auto mt-2 max-w-md text-sm text-neutral-600">
+            <div className="rounded-3xl border-2 border-dashed border-neutral-300 bg-white/70 px-6 py-14 text-center dark:border-white/15 dark:bg-neutral-900/40">
+              <IconRobot className="mx-auto mb-4 h-10 w-10 text-neutral-400 dark:text-neutral-500" />
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">No chatbots yet</h3>
+              <p className="mx-auto mt-2 max-w-md text-sm text-neutral-600 dark:text-neutral-400">
                 Create your first chatbot and start answering customer questions from your own documents.
               </p>
               <button onClick={() => setShowModal(true)} className="btn-primary mt-6">
@@ -201,8 +201,8 @@ export default function DashboardPage() {
                         {bot.name.charAt(0).toUpperCase()}
                       </div>
                       <div className="min-w-0">
-                        <h3 className="truncate text-base font-semibold text-neutral-900">{bot.name}</h3>
-                        <p className="text-xs text-neutral-500">
+                        <h3 className="truncate text-base font-semibold text-neutral-900 dark:text-neutral-100">{bot.name}</h3>
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400">
                           {new Date(bot.created_at).toLocaleDateString("en-US", {
                             month: "short",
                             day: "numeric",
@@ -213,7 +213,7 @@ export default function DashboardPage() {
                     </div>
                   </div>
 
-                  <p className="mt-4 line-clamp-3 rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-600">
+                  <p className="mt-4 line-clamp-3 rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-600 dark:border-white/10 dark:bg-neutral-800/50 dark:text-neutral-300">
                     {bot.welcome_message}
                   </p>
 
@@ -243,13 +243,13 @@ export default function DashboardPage() {
 
       {showModal ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/35 p-4 backdrop-blur-sm" onClick={(e) => e.target === e.currentTarget && setShowModal(false)}>
-          <div className="w-full max-w-md rounded-3xl border border-white/50 bg-white p-6 shadow-2xl shadow-indigo-950/20 sm:p-7 section-enter">
-            <h2 className="text-xl font-semibold text-neutral-900">Create chatbot</h2>
-            <p className="mt-1 text-sm text-neutral-600">Set up the basics now. You can customize later.</p>
+          <div className="w-full max-w-md rounded-3xl border border-white/50 bg-white p-6 shadow-2xl shadow-indigo-950/20 dark:border-white/10 dark:bg-neutral-900 sm:p-7 section-enter">
+            <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">Create chatbot</h2>
+            <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">Set up the basics now. You can customize later.</p>
 
             <div className="mt-6 space-y-4">
               <div>
-                <label className="mb-1.5 inline-block text-sm font-medium text-neutral-700">Name</label>
+                <label className="mb-1.5 inline-block text-sm font-medium text-neutral-700 dark:text-neutral-300">Name</label>
                 <input
                   type="text"
                   value={newName}
@@ -262,7 +262,7 @@ export default function DashboardPage() {
               </div>
 
               <div>
-                <label className="mb-1.5 inline-block text-sm font-medium text-neutral-700">Welcome message</label>
+                <label className="mb-1.5 inline-block text-sm font-medium text-neutral-700 dark:text-neutral-300">Welcome message</label>
                 <input
                   type="text"
                   value={newWelcome}
@@ -274,8 +274,8 @@ export default function DashboardPage() {
 
               <div>
                 <div className="mb-1.5 flex items-center justify-between">
-                  <label className="text-sm font-medium text-neutral-700">System prompt</label>
-                  <span className={`text-xs tabular-nums ${newSystemPrompt.length >= 500 ? "text-red-500 font-medium" : "text-neutral-400"}`}>
+                  <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">System prompt</label>
+                  <span className={`text-xs tabular-nums ${newSystemPrompt.length >= 500 ? "text-red-500 font-medium" : "text-neutral-400 dark:text-neutral-500"}`}>
                     {newSystemPrompt.length}/500
                   </span>
                 </div>
@@ -290,7 +290,7 @@ export default function DashboardPage() {
               </div>
 
               <div>
-                <label className="mb-2 inline-block text-sm font-medium text-neutral-700">Accent color</label>
+                <label className="mb-2 inline-block text-sm font-medium text-neutral-700 dark:text-neutral-300">Accent color</label>
                 <div className="flex flex-wrap gap-2">
                   {COLORS.map((color) => (
                     <button

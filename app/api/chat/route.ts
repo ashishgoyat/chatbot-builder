@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
         if (!chatbot_id || !message || !session_id) return NextResponse.json({ error: "Missing chatbot_id, message, or session_id" }, { status: 400 })
 
         // 15 messages per minute per session
-        const { allowed, retryAfter } = checkRateLimit(`chat:${session_id}`, 15, 60_000)
+        const { allowed, retryAfter } = await checkRateLimit(`chat:${session_id}`, 15, 60_000)
         if (!allowed) return rateLimitResponse(retryAfter)
 
         if (message.trim().length > 400) {

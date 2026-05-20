@@ -132,7 +132,7 @@ export default function ChatbotDetailPage() {
   if (!chatbot) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-neutral-500">Loading...</p>
+        <p className="text-neutral-500 dark:text-neutral-400">Loading...</p>
       </div>
     );
   }
@@ -153,10 +153,10 @@ export default function ChatbotDetailPage() {
               <IconArrowLeft className="mr-2 h-4 w-4" />
               Dashboard
             </Link>
-            <div className="h-6 w-px bg-neutral-200" />
+            <div className="h-6 w-px bg-neutral-200 dark:bg-white/15" />
             <div className="flex items-center gap-2">
               <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: chatbot.color }} />
-              <h1 className="text-base font-semibold text-neutral-900">{chatbot.name}</h1>
+              <h1 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">{chatbot.name}</h1>
             </div>
           </div>
 
@@ -169,13 +169,15 @@ export default function ChatbotDetailPage() {
           <div className="float-orb pointer-events-none absolute -right-20 -top-20 h-44 w-44 rounded-full bg-indigo-300/15 blur-3xl" />
           <div className="float-orb-slow pointer-events-none absolute -left-20 bottom-0 h-44 w-44 rounded-full bg-sky-300/12 blur-3xl" />
 
-          <div className="relative z-10 mb-6 inline-flex gap-1 rounded-2xl border border-neutral-200 bg-neutral-100/70 p-1">
+          <div className="relative z-10 mb-6 inline-flex gap-1 rounded-2xl border border-neutral-200 bg-neutral-100/70 p-1 dark:border-white/10 dark:bg-neutral-800/70">
             {tabs.map((item) => (
               <button
                 key={item.key}
                 onClick={() => setTab(item.key)}
                 className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-colors duration-150 ${
-                  tab === item.key ? "bg-white text-neutral-900 shadow-sm" : "text-neutral-600 hover:text-neutral-900"
+                  tab === item.key
+                    ? "bg-white text-neutral-900 shadow-sm dark:bg-neutral-700 dark:text-neutral-100"
+                    : "text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
                 }`}
               >
                 {item.icon}
@@ -188,20 +190,20 @@ export default function ChatbotDetailPage() {
             <div className="relative z-10 grid gap-6 lg:grid-cols-[0.95fr_1.05fr] section-enter">
               <div className="soft-card p-5">
                 <div className="flex items-center gap-2">
-                  <IconUpload className="h-4 w-4 text-indigo-600" />
-                  <h2 className="text-base font-semibold text-neutral-900">Upload training document</h2>
+                  <IconUpload className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                  <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">Upload training document</h2>
                 </div>
-                <p className="mt-2 text-sm text-neutral-600">Upload one PDF file and we will generate embeddings for retrieval.</p>
+                <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">Upload one PDF file and we will generate embeddings for retrieval.</p>
 
                 <input
                   type="file"
                   accept=".pdf"
                   onChange={(e) => setFile(e.target.files?.[0] || null)}
-                  className="mt-4 block w-full rounded-xl border border-dashed border-neutral-300 bg-white px-3 py-3 text-sm text-neutral-700 file:mr-3 file:rounded-full file:border-0 file:bg-indigo-50 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-indigo-700"
+                  className="mt-4 block w-full rounded-xl border border-dashed border-neutral-300 bg-white px-3 py-3 text-sm text-neutral-700 file:mr-3 file:rounded-full file:border-0 file:bg-indigo-50 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-indigo-700 dark:border-white/15 dark:bg-neutral-800 dark:text-neutral-300 dark:file:bg-indigo-900/50 dark:file:text-indigo-300"
                 />
 
                 <div className="mt-4 flex items-center justify-between gap-2">
-                  <span className={`text-sm ${uploadProgress.includes("Error") ? "text-red-600" : "text-emerald-600"}`}>
+                  <span className={`text-sm ${uploadProgress.includes("Error") ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}`}>
                     {uploadProgress}
                   </span>
                   <button onClick={uploadDocument} disabled={uploading || !file} className="btn-primary disabled:opacity-60">
@@ -212,21 +214,21 @@ export default function ChatbotDetailPage() {
 
               <div>
                 <div className="mb-3 flex items-center justify-between">
-                  <h2 className="text-base font-semibold text-neutral-900">Documents</h2>
-                  <span className="rounded-full border border-neutral-200 bg-white px-3 py-1 text-xs text-neutral-600">
+                  <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">Documents</h2>
+                  <span className="rounded-full border border-neutral-200 bg-white px-3 py-1 text-xs text-neutral-600 dark:border-white/10 dark:bg-neutral-800 dark:text-neutral-400">
                     {documents.length} total
                   </span>
                 </div>
 
                 {loading ? (
-                  <div className="rounded-2xl border border-neutral-200 bg-white p-8 text-center text-sm text-neutral-500">Loading documents...</div>
+                  <div className="rounded-2xl border border-neutral-200 bg-white p-8 text-center text-sm text-neutral-500 dark:border-white/10 dark:bg-neutral-800/50 dark:text-neutral-400">Loading documents...</div>
                 ) : documentsError ? (
-                  <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
+                  <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-400">
                     Failed to load documents: {documentsError}
                   </div>
                 ) : documents.length === 0 ? (
-                  <div className="rounded-2xl border-2 border-dashed border-neutral-300 bg-white px-6 py-12 text-center">
-                    <p className="text-sm text-neutral-600">No documents uploaded yet.</p>
+                  <div className="rounded-2xl border-2 border-dashed border-neutral-300 bg-white px-6 py-12 text-center dark:border-white/15 dark:bg-neutral-800/30">
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">No documents uploaded yet.</p>
                   </div>
                 ) : (
                   <div className="max-h-[520px] space-y-3 overflow-y-auto pr-1">
@@ -234,12 +236,12 @@ export default function ChatbotDetailPage() {
                       <article key={doc.id} className="soft-card p-4 reveal-up">
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold text-neutral-900">{doc.file_name}</p>
-                            <p className="mt-1 text-xs text-neutral-500">Status: {doc.status}</p>
+                            <p className="truncate text-sm font-semibold text-neutral-900 dark:text-neutral-100">{doc.file_name}</p>
+                            <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">Status: {doc.status}</p>
                           </div>
                         </div>
                         <div className="mt-3 flex items-center justify-between">
-                          <time className="text-xs text-neutral-500">
+                          <time className="text-xs text-neutral-500 dark:text-neutral-400">
                             {new Date(doc.created_at).toLocaleDateString("en-US", {
                               month: "short",
                               day: "numeric",
@@ -267,14 +269,14 @@ export default function ChatbotDetailPage() {
             <div className="section-enter max-w-2xl">
               <div className="soft-card p-5 sm:p-6">
                 <div className="flex items-center gap-2">
-                  <IconBolt className="h-4 w-4 text-indigo-600" />
-                  <h2 className="text-lg font-semibold text-neutral-900">Embed on your website</h2>
+                  <IconBolt className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                  <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Embed on your website</h2>
                 </div>
-                <p className="mt-2 text-sm leading-relaxed text-neutral-600">
-                  Copy and paste this snippet before the closing <code className="rounded bg-neutral-100 px-1 py-0.5 text-xs">{`</body>`}</code> tag.
+                <p className="mt-2 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
+                  Copy and paste this snippet before the closing <code className="rounded bg-neutral-100 px-1 py-0.5 text-xs dark:bg-neutral-700 dark:text-neutral-300">{`</body>`}</code> tag.
                 </p>
 
-                <pre className="mt-4 overflow-x-auto rounded-2xl border border-neutral-200 bg-neutral-50 p-4 text-xs leading-relaxed text-neutral-700">
+                <pre className="mt-4 overflow-x-auto rounded-2xl border border-neutral-200 bg-neutral-50 p-4 text-xs leading-relaxed text-neutral-700 dark:border-white/10 dark:bg-neutral-800/70 dark:text-neutral-300">
                   {embedCode}
                 </pre>
 
@@ -292,10 +294,10 @@ export default function ChatbotDetailPage() {
                   )}
                 </button>
 
-                <div className="mt-6 space-y-3 rounded-2xl border border-neutral-200 bg-white p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Flow</p>
-                  <p className="text-sm text-neutral-700">1. Add script tag to your website.</p>
-                  <p className="text-sm text-neutral-700">2. A launcher appears in the bottom-right corner through which Visitors can chat.</p>
+                <div className="mt-6 space-y-3 rounded-2xl border border-neutral-200 bg-white p-4 dark:border-white/10 dark:bg-neutral-800/50">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500 dark:text-neutral-400">Flow</p>
+                  <p className="text-sm text-neutral-700 dark:text-neutral-300">1. Add script tag to your website.</p>
+                  <p className="text-sm text-neutral-700 dark:text-neutral-300">2. A launcher appears in the bottom-right corner through which Visitors can chat.</p>
                 </div>
               </div>
             </div>

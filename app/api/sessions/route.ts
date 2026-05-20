@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     try{
         // 10 session creations per hour per IP
         const ip = getIP(req)
-        const { allowed, retryAfter } = checkRateLimit(`session:${ip}`, 5, 60 * 60_000)
+        const { allowed, retryAfter } = await checkRateLimit(`session:${ip}`, 5, 60 * 60_000)
         if (!allowed) return rateLimitResponse(retryAfter)
 
         const {chatbotId} = await req.json()
@@ -36,15 +36,19 @@ export async function POST(req: NextRequest) {
             const ownerEmail = userData?.user?.email;
 
             if (ownerEmail) {
-                await transporter.sendMail({
-                    from: `BotForge <${process.env.GMAIL_USER}>`,
-                    to: ownerEmail,
-                    subject: 'Session limit reached for your chatbot',
-                    html: `<p>Hi,</p>
-                           <p>Your chatbot <strong>${result.name}</strong> has reached its session limit. No new visitor sessions can be created.</p>
-                           <p>Thanks for Using.</p>
-                           <p>— The BotForge Team</p>`,
-                });
+                try {
+                    await transporter.sendMail({
+                        from: `BotForge <${process.env.GMAIL_USER}>`,
+                        to: ownerEmail,
+                        subject: 'Session limit reached for your chatbot',
+                        html: `<p>Hi,</p>
+                               <p>Your chatbot <strong>${result.name}</strong> has reached its session limit. No new visitor sessions can be created.</p>
+                               <p>Thanks for Using.</p>
+                               <p>— The BotForge Team</p>`,
+                    });
+                } catch (emailErr) {
+                    logger.warn('Failed to send session limit email', { error: String(emailErr) });
+                }
             }
 
             return NextResponse.json({ error: 'Session limit reached. No more sessions can be created for this chatbot.' }, { status: 403 });

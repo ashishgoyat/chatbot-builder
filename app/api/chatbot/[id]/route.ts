@@ -9,7 +9,7 @@ export async function GET(req: NextRequest, { params }: Params) {
     const { id } = await params;
 
     // 60 requests per minute per IP
-    const { allowed, retryAfter } = checkRateLimit(`chatbot-get:${getIP(req)}`, 60, 60_000)
+    const { allowed, retryAfter } = await checkRateLimit(`chatbot-get:${getIP(req)}`, 60, 60_000)
     if (!allowed) return rateLimitResponse(retryAfter)
 
     try {

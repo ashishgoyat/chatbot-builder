@@ -243,6 +243,15 @@
     box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.12);
   }
 
+  .dark .input-polish {
+    @apply border-white/15 bg-neutral-800 text-neutral-100 placeholder:text-neutral-500;
+  }
+
+  .dark .input-polish:focus {
+    @apply border-indigo-400/60;
+    box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.18);
+  }
+
   .chip {
     @apply inline-flex items-center rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700;
   }

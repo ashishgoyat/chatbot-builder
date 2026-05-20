@@ -40,13 +40,13 @@ export default function SignupForm() {
 
   return (
     <div className="app-shell flex min-h-screen items-center py-10">
-      <div className="mx-auto w-full max-w-3xl overflow-hidden rounded-3xl border border-white/60 bg-white/85 shadow-2xl shadow-indigo-950/10 backdrop-blur-xl section-enter">
+      <div className="mx-auto w-full max-w-3xl overflow-hidden rounded-3xl border border-white/60 bg-white/85 shadow-2xl shadow-indigo-950/10 backdrop-blur-xl dark:border-white/10 dark:bg-neutral-900 section-enter">
         {success ? (
           <section className="p-7 sm:p-10 reveal-up">
             <span className="chip">Account created</span>
-            <h2 className="mt-4 text-3xl font-semibold tracking-tight text-neutral-900">Check your inbox</h2>
-            <p className="mt-3 text-sm leading-relaxed text-neutral-600">
-              We sent a confirmation link to <span className="font-semibold text-neutral-800">{email}</span>. Open the
+            <h2 className="mt-4 text-3xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-100">Check your inbox</h2>
+            <p className="mt-3 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
+              We sent a confirmation link to <span className="font-semibold text-neutral-800 dark:text-neutral-200">{email}</span>. Open the
               email and verify your account, then login to continue.
             </p>
             <Link href="/login" className="btn-secondary mt-7 no-underline">
@@ -56,13 +56,13 @@ export default function SignupForm() {
           </section>
         ) : (
           <div className="grid md:grid-cols-[1.1fr_0.9fr]">
-            <section className="border-b border-neutral-200/70 bg-neutral-50/70 p-7 reveal-up md:border-b-0 md:border-r md:p-10">
-              <p className="text-xs uppercase tracking-[0.2em] text-neutral-500">Get started</p>
-              <h1 className="mt-3 text-3xl font-semibold leading-tight text-neutral-900">Create your BotForge workspace.</h1>
-              <p className="mt-4 text-sm leading-relaxed text-neutral-600">
+            <section className="border-b border-neutral-200/70 bg-neutral-50/70 p-7 reveal-up dark:border-white/10 dark:bg-neutral-800/50 md:border-b-0 md:border-r md:p-10">
+              <p className="text-xs uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400">Get started</p>
+              <h1 className="mt-3 text-3xl font-semibold leading-tight text-neutral-900 dark:text-neutral-100">Create your BotForge workspace.</h1>
+              <p className="mt-4 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
                 Launch your first support chatbot, train it on your documents, and embed it on any website.
               </p>
-              <div className="mt-8 space-y-3 text-sm text-neutral-700">
+              <div className="mt-8 space-y-3 text-sm text-neutral-700 dark:text-neutral-300">
                 <p>1. Sign up with email</p>
                 <p>2. Create chatbot</p>
                 <p>3. Upload docs and deploy</p>
@@ -70,7 +70,7 @@ export default function SignupForm() {
             </section>
 
             <section className="p-7 reveal-up reveal-delay-1 md:p-10">
-              <h2 className="text-2xl font-semibold tracking-tight text-neutral-900">Sign up</h2>
+              <h2 className="text-2xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-100">Sign up</h2>
 
               <div className="mt-6 space-y-4">
                 <div>
@@ -104,7 +104,7 @@ export default function SignupForm() {
                   </div>
                 </div>
 
-                {error ? <p className="text-sm text-red-600">{error}</p> : null}
+                {error ? <p className="text-sm text-red-600 dark:text-red-400">{error}</p> : null}
 
                 <button type="button" onClick={handleSubmit} disabled={loading} className="btn-primary mt-2 w-full disabled:opacity-60">
                   {loading ? "Creating account..." : "Create account"}
@@ -112,9 +112,9 @@ export default function SignupForm() {
                 </button>
               </div>
 
-              <p className="mt-6 text-sm text-neutral-600">
+              <p className="mt-6 text-sm text-neutral-600 dark:text-neutral-400">
                 Already have an account?{" "}
-                <Link href="/login" className="font-semibold text-neutral-900 hover:text-indigo-700">
+                <Link href="/login" className="font-semibold text-neutral-900 hover:text-indigo-700 dark:text-neutral-100 dark:hover:text-indigo-400">
                   Login
                 </Link>
               </p>

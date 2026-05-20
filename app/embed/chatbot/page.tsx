@@ -50,7 +50,7 @@ export default function EmbedChatbotPage() {
 
   if (!initialize || !sessionId || !chatbot) {
     return (
-      <div className="flex h-screen items-center justify-center bg-neutral-50 text-sm text-neutral-500">
+      <div className="flex h-screen items-center justify-center bg-neutral-50 text-sm text-neutral-500 dark:bg-neutral-900 dark:text-neutral-400">
         Loading chatbot...
       </div>
     );
@@ -87,9 +87,9 @@ function ChatUI({ sessionId, chatbot, chatbotId }: { sessionId: string; chatbot:
   };
 
   return (
-    <div className="h-screen bg-neutral-50 p-3">
-      <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-lg shadow-neutral-900/10">
-        <header className="flex items-center gap-3 border-b border-neutral-200 bg-neutral-50 px-4 py-3">
+    <div className="h-screen bg-neutral-50 p-3 dark:bg-neutral-950">
+      <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-lg shadow-neutral-900/10 dark:border-neutral-700 dark:bg-neutral-900">
+        <header className="flex items-center gap-3 border-b border-neutral-200 bg-neutral-50 px-4 py-3 dark:border-neutral-700 dark:bg-neutral-800">
           <div
             className="flex h-9 w-9 items-center justify-center rounded-full"
             style={{ backgroundColor: `${chatbot.color}1A`, border: `1px solid ${chatbot.color}40` }}
@@ -97,8 +97,8 @@ function ChatUI({ sessionId, chatbot, chatbotId }: { sessionId: string; chatbot:
             <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: chatbot.color }} />
           </div>
           <div>
-            <p className="text-sm font-semibold text-neutral-900">{chatbot.name}</p>
-            <p className="flex items-center gap-1 text-xs text-emerald-600">
+            <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{chatbot.name}</p>
+            <p className="flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
               Online
             </p>
@@ -107,7 +107,7 @@ function ChatUI({ sessionId, chatbot, chatbotId }: { sessionId: string; chatbot:
 
         <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-4">
           {/* Welcome message */}
-          <div className="max-w-[80%] rounded-2xl rounded-bl-sm border border-neutral-200 bg-neutral-50 px-4 py-2.5 text-sm text-neutral-700">
+          <div className="max-w-[80%] rounded-2xl rounded-bl-sm border border-neutral-200 bg-neutral-50 px-4 py-2.5 text-sm text-neutral-700 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
             {chatbot.welcome_message}
           </div>
 
@@ -126,7 +126,7 @@ function ChatUI({ sessionId, chatbot, chatbotId }: { sessionId: string; chatbot:
                 className={
                   msg.role === "user"
                     ? "ml-auto max-w-[80%] rounded-2xl rounded-br-sm px-4 py-2.5 text-sm text-white"
-                    : "max-w-[80%] rounded-2xl rounded-bl-sm border border-neutral-200 bg-neutral-50 px-4 py-2.5 text-sm text-neutral-700"
+                    : "max-w-[80%] rounded-2xl rounded-bl-sm border border-neutral-200 bg-neutral-50 px-4 py-2.5 text-sm text-neutral-700 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
                 }
                 style={
                   msg.role === "user"
@@ -140,7 +140,7 @@ function ChatUI({ sessionId, chatbot, chatbotId }: { sessionId: string; chatbot:
           })}
 
           {status === "streaming" && (
-            <div className="max-w-[80%] rounded-2xl rounded-bl-sm border border-neutral-200 bg-neutral-50 px-4 py-2.5 text-xs text-neutral-500">
+            <div className="max-w-[80%] rounded-2xl rounded-bl-sm border border-neutral-200 bg-neutral-50 px-4 py-2.5 text-xs text-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-400">
               Thinking...
             </div>
           )}
@@ -148,7 +148,7 @@ function ChatUI({ sessionId, chatbot, chatbotId }: { sessionId: string; chatbot:
           <div ref={chatEndRef} />
         </div>
 
-        <footer className="flex gap-2 border-t border-neutral-200 bg-neutral-50 p-3">
+        <footer className="flex gap-2 border-t border-neutral-200 bg-neutral-50 p-3 dark:border-neutral-700 dark:bg-neutral-800">
           <input
             type="text"
             value={input}
