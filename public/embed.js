@@ -7,7 +7,21 @@
     return;
   }
 
-  const origin = script?.getAttribute("data-origin") || window.location.origin;
+  // Resolve the chatbot host: prefer an explicit data-origin, otherwise derive
+  // it from this script's own src (where embed.js was served from). Never fall
+  // back to window.location.origin — that's the embedding page, not our app.
+  let origin = script?.getAttribute("data-origin");
+  if (!origin && script?.src) {
+    try {
+      origin = new URL(script.src).origin;
+    } catch (e) {
+      origin = null;
+    }
+  }
+  if (!origin) {
+    console.error("Chatbot: could not resolve embed origin");
+    return;
+  }
   let open = false;
 
   const iframe = document.createElement("iframe");

@@ -19,11 +19,15 @@ export default function EmbedChatbotPage() {
   const [sessionId, setSessionId] = useState("");
   const [chatbot, setChatbot] = useState<Chatbot | null>(null);
   const [initialize, setInitialize] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const init = async () => {
       try {
-        if (!chatbotId) return;
+        if (!chatbotId) {
+          setError("Missing chatbot id.");
+          return;
+        }
 
         const resSession = await fetch("/api/sessions", {
           method: "POST",
@@ -31,6 +35,10 @@ export default function EmbedChatbotPage() {
           body: JSON.stringify({ chatbotId }),
         });
         const dataSession = await resSession.json();
+        if (!resSession.ok || !dataSession.sessionId) {
+          setError(dataSession.error || "Couldn't start a chat session.");
+          return;
+        }
         setSessionId(dataSession.sessionId);
 
         const resChatbot = await fetch(`/api/chatbot/${chatbotId}`, {
@@ -38,15 +46,28 @@ export default function EmbedChatbotPage() {
           headers: { "Content-Type": "application/json" },
         });
         const dataChatbot = await resChatbot.json();
+        if (!resChatbot.ok) {
+          setError(dataChatbot.error || "Couldn't load this chatbot.");
+          return;
+        }
 
         setChatbot(dataChatbot);
         setInitialize(true);
       } catch (err: unknown) {
         console.error("Error in creating session or fetching chatbot data", err);
+        setError("Something went wrong. Please try again.");
       }
     };
     init();
   }, [chatbotId]);
+
+  if (error) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-neutral-50 p-6 text-center text-sm text-neutral-500 dark:bg-neutral-900 dark:text-neutral-400">
+        {error}
+      </div>
+    );
+  }
 
   if (!initialize || !sessionId || !chatbot) {
     return (
