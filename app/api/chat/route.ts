@@ -1,5 +1,6 @@
 // Import necessary modules and initialize clients
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { CohereEmbeddings } from "@langchain/cohere"
 import { NextRequest, NextResponse } from "next/server";
 import { streamText, type ModelMessage } from "ai";
@@ -41,7 +42,13 @@ export async function POST(req: NextRequest) {
         const { chatbot_id, messages, session_id } = await req.json()
         // Safely extract the last user message — parts[0].text is the AI SDK format
         const lastMsg = messages?.[messages.length - 1]
-        const message: string = lastMsg?.parts?.[0]?.text ?? lastMsg?.content ?? ""
+        // Join all text parts (AI SDK v6 can split a message into multiple parts), not just the first
+        const message: string = (
+            lastMsg?.parts
+                ?.filter((p: any) => p.type === "text")
+                .map((p: any) => p.text)
+                .join("") ?? lastMsg?.content ?? ""
+        ).trim()
 
         if (!chatbot_id || !message || !session_id) return NextResponse.json({ error: "Missing chatbot_id, message, or session_id" }, { status: 400 })
 
@@ -49,7 +56,7 @@ export async function POST(req: NextRequest) {
         const { allowed, retryAfter } = await checkRateLimit(`chat:${session_id}`, 15, 60_000)
         if (!allowed) return rateLimitResponse(retryAfter)
 
-        if (message.trim().length > 400) {
+        if (message.length > 400) {
             return NextResponse.json({ error: "Message exceeds maximum length of 400 characters" }, { status: 400 })
         }
 
@@ -65,11 +72,14 @@ export async function POST(req: NextRequest) {
         if (!chatbot) return NextResponse.json({ error: 'Chatbot not found' }, { status: 404 })
 
 
-        // Generate embedding using recent history + current message for better multi-turn retrieval
+        // Generate embedding using recent USER questions + current message for better multi-turn
+        // retrieval. Assistant replies are excluded — a long answer (or a refusal) in the query
+        // drags the embedding away from what the user is actually asking about.
         const { data: recentHistory } = await supabase
             .from("messages")
             .select("role, content")
             .eq("session_id", session_id)
+            .eq("role", "user")
             .order("created_at", { ascending: false })
             .limit(2);
 
@@ -79,7 +89,12 @@ export async function POST(req: NextRequest) {
 
         const queryEmbedding = await embeddings.embedQuery(contextualQuery)
 
-        const { data: chunks, error: chunksError } = await supabase.rpc('match_document_chunks', {
+        // Use the service-role client for retrieval: embed visitors are anonymous, and RLS on the
+        // `documents` table hides rows from them, which makes the match RPC's join return zero chunks.
+        // We've already validated that session_id belongs to chatbot_id, and the search is scoped to
+        // chatbot_id, so this only surfaces this chatbot's own content.
+        const adminClient = createAdminClient()
+        const { data: chunks, error: chunksError } = await adminClient.rpc('match_document_chunks', {
             query_embedding: queryEmbedding,
             chatbot_id,
             match_count: 5,
@@ -88,7 +103,7 @@ export async function POST(req: NextRequest) {
         if (chunksError) throw chunksError
 
         // Filter out low-similarity chunks so off-topic questions don't get hallucinated answers
-        const SIMILARITY_THRESHOLD = 0.2; // Cohere cosine similarity — 0.3 is a safe floor for relevant chunks
+        const SIMILARITY_THRESHOLD = 0.3; // Cohere cosine similarity — 0.3 is a safe floor for relevant chunks
         const relevantChunks = chunks?.filter((chunk: any) => chunk.similarity >= SIMILARITY_THRESHOLD) ?? [];
         const context = relevantChunks.length
             ? relevantChunks.map((chunk: any) => chunk.content).join('\n\n')
@@ -117,8 +132,13 @@ export async function POST(req: NextRequest) {
             : `You are a helpful AI assistant called "${chatbot.name}".\n\n`;
 
         const ragConstraint = context
-            ? `Use the context below as your primary source. Answer helpfully and completely. If the exact answer isn't stated but can be reasonably inferred from the context, do so. Only say you don't have information if the topic is completely unrelated to the provided documents.\n\nContext:\n${context}`
-            : `No relevant document content was found for this query. Let the user know they may need to rephrase their question, or ask something related to the documents you have been trained on.`;
+            ? `Answer the user's question using ONLY the information in the context below. ` +
+              `Do not use any outside or prior knowledge, and do not make up facts. ` +
+              `If the answer is not contained in the context, reply that you don't have information about that in the provided documents — do not attempt to answer from general knowledge.\n\n` +
+              `Context:\n${context}`
+            : `There is no relevant information in the provided documents for this question. ` +
+              `Tell the user you can only answer questions based on the uploaded documents and that this question appears to be outside of them. ` +
+              `Do not answer from general knowledge.`;
 
         // Creating messages array for OpenAI completion, including system prompts, context, history, and user message
         const promptMessages: ModelMessage[] = [
@@ -154,7 +174,9 @@ export async function POST(req: NextRequest) {
                         content: text,
                     },
                 ]);
-                if (error) throw error;
+                // The response is already streaming to the client here — throwing would only
+                // surface as an unhandled rejection. Log so persistence failures are visible.
+                if (error) logger.error("Failed to persist chat messages", error, { session_id });
             }
         })
 

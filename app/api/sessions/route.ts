@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     try{
         // 10 session creations per hour per IP
         const ip = getIP(req)
-        const { allowed, retryAfter } = await checkRateLimit(`session:${ip}`, 5, 60 * 60_000)
+        const { allowed, retryAfter } = await checkRateLimit(`session:${ip}`, 10, 60 * 60_000)
         if (!allowed) return rateLimitResponse(retryAfter)
 
         const {chatbotId} = await req.json()
@@ -31,11 +31,15 @@ export async function POST(req: NextRequest) {
         if (claimError || !result) return NextResponse.json({ error: 'Chatbot not found' }, { status: 404 });
 
         if (!result.claimed) {
+            // Notify the owner at most once per day per chatbot — without this, every
+            // blocked visitor fires another email.
+            const { allowed: shouldEmail } = await checkRateLimit(`limit-email:${chatbotId}`, 1, 24 * 60 * 60_000)
+
             const adminClient = createAdminClient();
             const { data: userData } = await adminClient.auth.admin.getUserById(result.user_id);
             const ownerEmail = userData?.user?.email;
 
-            if (ownerEmail) {
+            if (ownerEmail && shouldEmail) {
                 try {
                     await transporter.sendMail({
                         from: `BotForge <${process.env.GMAIL_USER}>`,

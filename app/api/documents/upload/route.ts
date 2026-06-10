@@ -8,11 +8,26 @@ import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 
 
+// PDFs with letter-spaced styling extract as "G l o b a l W a r m i n g" — one space between
+// every character — which wrecks embedding quality. Collapse lines that are mostly
+// single-character tokens; leave normal lines untouched.
+function normalizeExtractedText(text: string): string {
+    return text
+        .split("\n")
+        .map((line) => {
+            const tokens = line.trim().split(/\s+/)
+            if (tokens.length < 6) return line
+            const singleCharRatio = tokens.filter((t) => t.length === 1).length / tokens.length
+            return singleCharRatio > 0.8 ? tokens.join("") : line
+        })
+        .join("\n")
+}
+
 // function to extract text from PDF using pdf-parse
 async function extractTextFromPDF(file: File) {
     const buffer = await file.arrayBuffer()
     const text = await extractText(new Uint8Array(buffer))
-    const fullText = text.text.join('\n')
+    const fullText = normalizeExtractedText(text.text.join('\n'))
     if (!fullText.trim()) throw new Error("PDF contains no extractable text")
     return fullText
 }
@@ -149,8 +164,10 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true, documentId: documentData.id, status: "completed", chunks: tokenChunks.length })
     } catch (err: any) {
         if(documentId) {
-            // Best-effort; don't mask the original error if this fails.
+            // Best-effort cleanup; don't mask the original error if this fails.
+            // Remove any partially-inserted chunks so a failed doc can't pollute retrieval.
             try {
+                await supabase.from('document_chunks').delete().eq('document_id', documentId);
                 await supabase.from('documents').update({ status: "failed" }).eq('id', documentId);
             } catch {}
         }

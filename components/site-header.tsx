@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { ThemeToggle } from "@/components/theme-toggle";
 
 export function SiteHeader() {
   return (
@@ -19,7 +18,6 @@ export function SiteHeader() {
         </div>
 
         <div className="flex items-center gap-2">
-          <ThemeToggle />
           <Link href="/login" className="btn-secondary hidden no-underline sm:inline-flex">
             Login
           </Link>

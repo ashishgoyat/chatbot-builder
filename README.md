@@ -14,13 +14,15 @@ BotForge lets you create AI-powered chatbots trained on your own documents and e
 
 | Layer | Technology |
 |---|---|
-| Framework | Next.js 15 (App Router) |
+| Framework | Next.js 16 (App Router) |
 | Language | TypeScript |
 | Styling | Tailwind CSS v4 |
 | Auth & Database | Supabase |
 | Vector search | Supabase pgvector |
-| LLM | OpenRouter → GPT-4o-mini |
+| LLM | OpenRouter → GPT-4o-mini (via the `ai` SDK, streaming) |
 | Embeddings | Cohere `embed-english-v3.0` |
+| PDF parsing | `unpdf` + LangChain text splitter |
+| Rate limiting | Upstash Redis (in-memory fallback in dev) |
 | Email | Nodemailer + Gmail SMTP |
 
 ## Getting started
@@ -162,14 +164,15 @@ $$;
 | OpenRouter | [openrouter.ai/keys](https://openrouter.ai/keys) |
 | Cohere | [dashboard.cohere.com/api-keys](https://dashboard.cohere.com/api-keys) |
 | Gmail app password | Google Account → Security → App Passwords |
+| Upstash Redis (production only) | [console.upstash.com](https://console.upstash.com) → REST credentials |
 
 ### 4. Configure environment variables
 
 ```bash
-cp .env.example .env.local
+cp .env.example .env
 ```
 
-Fill in `.env.local`:
+Fill in `.env`:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
@@ -181,6 +184,11 @@ COHERE_API_KEY=your_cohere_api_key
 
 GMAIL_USER=your_gmail@gmail.com
 GMAIL_APP_PASSWORD=your_app_password
+
+# Optional in dev (falls back to an in-memory limiter); required in production
+# for distributed rate limiting across serverless instances.
+UPSTASH_REDIS_REST_URL=your_upstash_rest_url
+UPSTASH_REDIS_REST_TOKEN=your_upstash_rest_token
 ```
 
 ### 5. Run locally
@@ -216,10 +224,14 @@ app/
 │   └── sessions/          # Visitor session management
 ├── dashboard/             # Chatbot management UI
 ├── embed/chatbot/         # Embeddable chat UI (iframeable)
-└── login/ signup/         # Auth pages
+├── login/ signup/         # Auth pages
+└── layout.tsx             # Root layout (light theme)
 lib/
 ├── supabase/              # Client, server, and admin Supabase clients
-└── rate-limit.ts          # In-memory sliding window rate limiter
+├── rate-limit.ts          # Upstash Redis limiter, in-memory fallback in dev
+└── logger.ts              # Structured JSON logger
+components/                # UI components (site header, shared widgets)
+middleware.ts              # Auth guard for /dashboard routes
 public/
 └── embed.js               # Embed script (creates iframe + chat bubble)
 ```

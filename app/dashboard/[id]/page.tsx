@@ -89,9 +89,9 @@ export default function ChatbotDetailPage() {
   };
 
   const uploadDocument = async () => {
+    if (!file) return;
     setUploading(true);
     setUploadProgress("Generating embeddings...");
-    if (!file) return;
 
     const formData = new FormData();
     formData.append("file", file);
@@ -103,15 +103,18 @@ export default function ChatbotDetailPage() {
         body: formData,
       });
 
-      if (!res.ok) throw new Error("Upload failed");
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Upload failed");
+      }
       setUploadProgress("Done");
       setFile(null);
       await fetchDocuments();
-    } catch {
-      setUploadProgress("Error uploading. Try again.");
+    } catch (err) {
+      setUploadProgress(err instanceof Error ? err.message : "Error uploading. Try again.");
     } finally {
       setUploading(false);
-      setTimeout(() => setUploadProgress(""), 2000);
+      setTimeout(() => setUploadProgress(""), 4000);
     }
   };
 

@@ -94,7 +94,7 @@ export default function HomePage() {
               </div>
 
               <a
-                href="https://github.com/ashishgoyat/"
+                href="https://github.com/ashishgoyat/chatbot-builder"
                 target="_blank"
                 rel="noreferrer"
                 className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-neutral-600 transition-colors duration-150 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-neutral-100"
